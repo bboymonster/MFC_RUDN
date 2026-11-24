@@ -16,17 +16,27 @@ from mfc_analytics.models.call import (
     CriterionStatus,
     Utterance,
 )
+from mfc_analytics.models.knowledge_base import ReferenceRule
 
 
 class MFCAnalyticsPipeline:
     """Пайплайн пакетной и потоковой аналитики телефонных звонков контакт-центра."""
 
-    def __init__(self):
+    def __init__(self, rules: Optional[List[ReferenceRule]] = None):
+        self._rules: List[ReferenceRule] = list(rules) if rules else list(REFERENCE_RULES)
         self.classifier = CallClassifier()
-        self.quality_checker = QualityChecker()
+        self.quality_checker = QualityChecker(rules=self._rules)
         self.semantic_evaluator = SemanticQualityEvaluator()
         self.systemic_detector = SystemicIssueDetector()
-        self.rules = REFERENCE_RULES
+
+    @property
+    def rules(self) -> List[ReferenceRule]:
+        return self._rules
+
+    @rules.setter
+    def rules(self, new_rules: List[ReferenceRule]):
+        self._rules = list(new_rules)
+        self.quality_checker.set_rules(self._rules)
 
     def analyze_call(self, call: Call) -> Call:
         """Выполняет полный цикл обработки одного звонка: классификацию и оценку качества."""
@@ -43,19 +53,20 @@ class MFCAnalyticsPipeline:
         call.inquiry_type = self.classifier.classify_inquiry_type(full_text)
         call.outcome = self.classifier.classify_outcome(call.utterances)
 
-        # 2. Проверка качества по 6 критериям
+        # 2. Проверка качества по 6 критериям со сверкой с базой знаний
         evaluations, score, has_crit, crit_summary = self.quality_checker.evaluate_call(
             utterances=call.utterances,
             topic=call.topic,
             category=call.applicant_category,
             outcome=call.outcome,
             call_time=call.metadata.timestamp,
+            custom_rules=self._rules,
         )
 
         # 3. Глубокий семантический анализ (скрытая агрессия, нюансы регламентов)
         nuance_evidences = self.semantic_evaluator.evaluate_dialogue_nuances(
             utterances=call.utterances,
-            rules=self.rules,
+            rules=self._rules,
         )
         if nuance_evidences:
             for ev in nuance_evidences:

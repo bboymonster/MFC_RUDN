@@ -22,7 +22,7 @@ from mfc_analytics.models.call import (
     SpeakerRole,
     Utterance,
 )
-from mfc_analytics.models.cms import CMSInterval, CMSReportSummary
+from mfc_analytics.models.cms import CMSInterval
 from mfc_analytics.data.seed_rules import DEPARTMENTS, REFERENCE_RULES
 
 
@@ -63,36 +63,32 @@ class MFCDataGenerator:
             is_sunday = current_date.weekday() == 6
             is_saturday = current_date.weekday() == 5
             
-            # Воскресенье - выходной
             if is_sunday:
                 current_date += timedelta(days=1)
                 continue
 
             is_peak_day = (current_date.month, current_date.day) in peak_dates
-            
-            # Генерация интервалов с 09:00 до 19:00 (суббота до 15:00)
             end_hour = 15 if is_saturday else 19
             day_cursor = current_date.replace(hour=9, minute=0, second=0)
 
             while day_cursor.hour < end_hour:
                 hour = day_cursor.hour
-                # Пиковые часы дня
                 is_peak_hour = hour in (10, 11, 12, 16)
                 
                 if is_peak_day and is_peak_hour:
-                    offered = self.rng.randint(65, 120)
+                    offered = self.rng.randint(70, 130)
                     answered = int(offered * self.rng.uniform(0.70, 0.85))
                     positions = self.rng.randint(6, 8)
                     asa = round(self.rng.uniform(90.0, 240.0), 1)
                     regime = LoadRegime.HIGH
                 elif is_peak_day or is_peak_hour:
-                    offered = self.rng.randint(35, 64)
+                    offered = self.rng.randint(35, 68)
                     answered = int(offered * self.rng.uniform(0.85, 0.94))
                     positions = self.rng.randint(5, 7)
                     asa = round(self.rng.uniform(30.0, 85.0), 1)
                     regime = LoadRegime.TYPICAL
                 else:
-                    offered = self.rng.randint(8, 30)
+                    offered = self.rng.randint(8, 32)
                     answered = int(offered * self.rng.uniform(0.92, 0.98))
                     positions = self.rng.randint(4, 5)
                     asa = round(self.rng.uniform(5.0, 25.0), 1)
@@ -123,7 +119,7 @@ class MFCDataGenerator:
         return intervals
 
     def generate_curated_calls(self) -> List[Call]:
-        """Генерирует калиброванный эталонный корпус звонков, включая ключевые сценарии из ТЗ."""
+        """Генерирует калиброванный эталонный корпус звонков, включая ключевые сценарии."""
         calls: List[Call] = []
 
         # Сценарий 1: Критическая ошибка в дедлайне согласия (4 августа)
@@ -144,14 +140,14 @@ class MFCDataGenerator:
         # Сценарий 6: Идеальная консультация по общежитию (100% соблюдение стандартов)
         calls.append(self._create_scenario_6_perfect_dormitory_consultation())
 
-        # Дополнительные типовые звонки для наполнения выборки до 30+ звонков
-        additional = self._generate_additional_realistic_calls(count=26)
+        # Дополнительные разнообразные звонки
+        additional = self._generate_additional_realistic_calls(count=28)
         calls.extend(additional)
 
         return calls
 
     def _create_scenario_1_critical_consent_error(self) -> Call:
-        """Сценарий 1 из исследования: оператор назвал ошибочный дедлайн согласия."""
+        """Сценарий 1: оператор назвал ошибочный дедлайн согласия."""
         timestamp = datetime(2026, 8, 4, 11, 42, 10)
         utterances = [
             Utterance(id=1, speaker=SpeakerRole.OPERATOR, start_ms=0, end_ms=2800, text="Добрый день! Единый контакт-центр МФЦ РУДН, оператор Анна. Чем могу вам помочь?"),
@@ -175,26 +171,6 @@ class MFCDataGenerator:
             is_repeat_call=False,
         )
 
-        evidence = Evidence(
-            criterion_id="accuracy",
-            quote="Завтра, пятого августа, вы можете спокойно подать оригинал до вечера, где-то до 18:00... Комиссия принимает документы до шести вечера.",
-            start_ms=10100,
-            end_ms=26200,
-            rule_id="RULE_CONSENT_BUDGET_DEADLINE",
-            rule_version="2026.1",
-            explanation="Критическая ошибка: официальный дедлайн подачи согласий на основном этапе бюджета — 5 августа строго до 12:00 МСК. Заявитель рискует не поступить на бюджет при явке в 16:00.",
-            severity="CRITICAL",
-        )
-
-        criteria = [
-            CriterionEvaluation(criterion_id="understanding", name="Понимание вопроса", status=CriterionStatus.COMPLIANT, score=1.0, comment="Суть вопроса понята."),
-            CriterionEvaluation(criterion_id="accuracy", name="Точность информации", status=CriterionStatus.VIOLATED, score=0.0, evidences=[evidence], comment="Грубая дезинформация о сроке согласия."),
-            CriterionEvaluation(criterion_id="completeness", name="Полнота ответа", status=CriterionStatus.VIOLATED, score=0.4, comment="Не озвучен часовой пояс и возможность подачи через Госуслуги."),
-            CriterionEvaluation(criterion_id="routing", name="Маршрутизация", status=CriterionStatus.COMPLIANT, score=1.0, comment="Вопрос в компетенции линии МФЦ."),
-            CriterionEvaluation(criterion_id="communication", name="Стандарты коммуникации", status=CriterionStatus.COMPLIANT, score=0.9, comment="Вежливо, без нарушений тональности."),
-            CriterionEvaluation(criterion_id="result", name="Результат консультации", status=CriterionStatus.VIOLATED, score=0.0, comment="Ответ дан ошибочный, вопрос приведет к срыву зачисления."),
-        ]
-
         return Call(
             metadata=meta,
             utterances=utterances,
@@ -207,7 +183,6 @@ class MFCDataGenerator:
             overall_quality_score=38.0,
             has_critical_error=True,
             critical_error_summary="Ошибочно названо время согласия: 'до 18:00' вместо строгого регламента 'до 12:00 МСК 5 августа'.",
-            criteria_evaluations=criteria,
             manager_status=ManagerStatus.PENDING,
         )
 
@@ -234,26 +209,6 @@ class MFCDataGenerator:
             is_repeat_call=False,
         )
 
-        evidence = Evidence(
-            criterion_id="completeness",
-            quote="Ну раз в договоре написано 10 дней, оплачивайте спокойно в течение 10 дней.",
-            start_ms=11000,
-            end_ms=17500,
-            rule_id="RULE_CONTRACT_PAYMENT_DEADLINE",
-            rule_version="2026.1",
-            explanation="Неполный и потенциально ошибочный ответ: крайний срок оплаты для основного платного набора — 24 августа до 12:00 МСК (через 3 дня), а не через 10 дней. Приказ выходит 28 августа.",
-            severity="HIGH",
-        )
-
-        criteria = [
-            CriterionEvaluation(criterion_id="understanding", name="Понимание вопроса", status=CriterionStatus.COMPLIANT, score=0.9, comment="Запрос на срок оплаты."),
-            CriterionEvaluation(criterion_id="accuracy", name="Точность информации", status=CriterionStatus.VIOLATED, score=0.4, evidences=[evidence], comment="Игнорирование предельного дедлайна 24 августа."),
-            CriterionEvaluation(criterion_id="completeness", name="Полнота ответа", status=CriterionStatus.VIOLATED, score=0.3, comment="Не озвучен дедлайн 24.08 12:00 и дата приказа."),
-            CriterionEvaluation(criterion_id="routing", name="Маршрутизация", status=CriterionStatus.VIOLATED, score=0.5, comment="Перевод без предварительного разъяснения ситуации."),
-            CriterionEvaluation(criterion_id="communication", name="Стандарты коммуникации", status=CriterionStatus.COMPLIANT, score=0.8, comment="Нейтрально, но перевод оборвал разговор."),
-            CriterionEvaluation(criterion_id="result", name="Результат консультации", status=CriterionStatus.COMPLIANT, score=0.6, comment="Переведен в профильное подразделение."),
-        ]
-
         return Call(
             metadata=meta,
             utterances=utterances,
@@ -266,7 +221,6 @@ class MFCDataGenerator:
             outcome=CallOutcome.TRANSFERRED,
             overall_quality_score=52.0,
             has_critical_error=False,
-            criteria_evaluations=criteria,
             manager_status=ManagerStatus.PENDING,
         )
 
@@ -294,26 +248,6 @@ class MFCDataGenerator:
             is_repeat_call=False,
         )
 
-        evidence = Evidence(
-            criterion_id="accuracy",
-            quote="Все заявления подаются через портал Госуслуг, суперсервис 'Поступление в вуз онлайн'. Заходите туда и прикрепляете документы.",
-            start_ms=11800,
-            end_ms=18400,
-            rule_id="RULE_APPLICATION_CHANNELS_INT",
-            rule_version="2026.1",
-            explanation="Ошибочный канал подачи: иностранные граждане без СНИЛС подают документы через международный портал intstudent.rudn.ru, а не через портал Госуслуг РФ.",
-            severity="HIGH",
-        )
-
-        criteria = [
-            CriterionEvaluation(criterion_id="understanding", name="Понимание вопроса", status=CriterionStatus.VIOLATED, score=0.2, comment="Оператор проигнорировал статус иностранного гражданина."),
-            CriterionEvaluation(criterion_id="accuracy", name="Точность информации", status=CriterionStatus.VIOLATED, score=0.1, evidences=[evidence], comment="Направление на неподходящий портал."),
-            CriterionEvaluation(criterion_id="completeness", name="Полнота ответа", status=CriterionStatus.VIOLATED, score=0.2, comment="Не назван портал intstudent.rudn.ru и требования к переводам."),
-            CriterionEvaluation(criterion_id="routing", name="Маршрутизация", status=CriterionStatus.VIOLATED, score=0.2, comment="Не переведён в департамент международного рекрутинга."),
-            CriterionEvaluation(criterion_id="communication", name="Стандарты коммуникации", status=CriterionStatus.COMPLIANT, score=0.7, comment="Без грубости, но консультация бесполезна."),
-            CriterionEvaluation(criterion_id="result", name="Результат консультации", status=CriterionStatus.VIOLATED, score=0.1, comment="Вопрос остался не решен."),
-        ]
-
         return Call(
             metadata=meta,
             utterances=utterances,
@@ -326,7 +260,6 @@ class MFCDataGenerator:
             overall_quality_score=25.0,
             has_critical_error=False,
             critical_error_summary="Иностранного абитуриента отправили на Госуслуги РФ вместо международного портала intstudent.rudn.ru.",
-            criteria_evaluations=criteria,
             manager_status=ManagerStatus.PENDING,
         )
 
@@ -356,15 +289,6 @@ class MFCDataGenerator:
             previous_call_id="CALL-2026-0724-889",
         )
 
-        criteria = [
-            CriterionEvaluation(criterion_id="understanding", name="Понимание вопроса", status=CriterionStatus.COMPLIANT, score=1.0, comment="Снял тревожность, точно определил проблему."),
-            CriterionEvaluation(criterion_id="accuracy", name="Точность информации", status=CriterionStatus.COMPLIANT, score=1.0, comment="Проверил реальный технический статус в базе."),
-            CriterionEvaluation(criterion_id="completeness", name="Полнота ответа", status=CriterionStatus.COMPLIANT, score=1.0, comment="Назван четкий дедлайн обновления и план действий."),
-            CriterionEvaluation(criterion_id="routing", name="Маршрутизация", status=CriterionStatus.COMPLIANT, score=1.0, comment="Решено на первой линии без перевода."),
-            CriterionEvaluation(criterion_id="communication", name="Стандарты коммуникации", status=CriterionStatus.COMPLIANT, score=1.0, comment="Эмпатия, профессионализм, соблюдение скрипта."),
-            CriterionEvaluation(criterion_id="result", name="Результат консультации", status=CriterionStatus.COMPLIANT, score=1.0, comment="Вопрос полностью решен."),
-        ]
-
         return Call(
             metadata=meta,
             utterances=utterances,
@@ -376,7 +300,6 @@ class MFCDataGenerator:
             outcome=CallOutcome.RESOLVED_IN_CALL,
             overall_quality_score=100.0,
             has_critical_error=False,
-            criteria_evaluations=criteria,
             manager_status=ManagerStatus.RESOLVED,
             manager_notes="Эталонная отработка повторного обращения и технической задержки ЕПГУ.",
         )
@@ -402,26 +325,6 @@ class MFCDataGenerator:
             is_repeat_call=False,
         )
 
-        evidence = Evidence(
-            criterion_id="communication",
-            quote="Женщина, у меня тридцать звонков в очереди висит! Читайте инструкцию на сайте, там крупными буквами всё написано! До свидания.",
-            start_ms=8800,
-            end_ms=16000,
-            rule_id="RULE_COMMUNICATION_STANDARDS",
-            rule_version="2026.1",
-            explanation="Грубое нарушение стандарта телефонного обслуживания: перебивание заявителя, раздражение, отказ в помощи и односторонний сброс вызова.",
-            severity="CRITICAL",
-        )
-
-        criteria = [
-            CriterionEvaluation(criterion_id="understanding", name="Понимание вопроса", status=CriterionStatus.VIOLATED, score=0.1, comment="Вопрос не выслушан."),
-            CriterionEvaluation(criterion_id="accuracy", name="Точность информации", status=CriterionStatus.INSUFFICIENT_DATA, score=0.5, comment="Информация не предоставлена."),
-            CriterionEvaluation(criterion_id="completeness", name="Полнота ответа", status=CriterionStatus.VIOLATED, score=0.0, comment="Консультация сорвана."),
-            CriterionEvaluation(criterion_id="routing", name="Маршрутизация", status=CriterionStatus.NOT_APPLICABLE, score=0.5, comment="Маршрутизация не проводилась."),
-            CriterionEvaluation(criterion_id="communication", name="Стандарты коммуникации", status=CriterionStatus.VIOLATED, score=0.0, evidences=[evidence], comment="Грубость, эмоциональный срыв оператора."),
-            CriterionEvaluation(criterion_id="result", name="Результат консультации", status=CriterionStatus.VIOLATED, score=0.0, comment="Звонок сброшен оператором."),
-        ]
-
         return Call(
             metadata=meta,
             utterances=utterances,
@@ -434,7 +337,6 @@ class MFCDataGenerator:
             overall_quality_score=15.0,
             has_critical_error=True,
             critical_error_summary="Грубое нарушение этики общения: раздражительность, отказ в консультации и сброс трубки.",
-            criteria_evaluations=criteria,
             manager_status=ManagerStatus.PENDING,
         )
 
@@ -463,15 +365,6 @@ class MFCDataGenerator:
             is_repeat_call=False,
         )
 
-        criteria = [
-            CriterionEvaluation(criterion_id="understanding", name="Понимание вопроса", status=CriterionStatus.COMPLIANT, score=1.0, comment="Точно определена потребность и статус иногороднего."),
-            CriterionEvaluation(criterion_id="accuracy", name="Точность информации", status=CriterionStatus.COMPLIANT, score=1.0, comment="Все даты и регламенты соответствуют положению об общежитиях."),
-            CriterionEvaluation(criterion_id="completeness", name="Полнота ответа", status=CriterionStatus.COMPLIANT, score=1.0, comment="Озвучены условия, дата старта (25.08) и список меддокументов."),
-            CriterionEvaluation(criterion_id="routing", name="Маршрутизация", status=CriterionStatus.COMPLIANT, score=1.0, comment="Информация дана в полном объеме без избыточных переводов."),
-            CriterionEvaluation(criterion_id="communication", name="Стандарты коммуникации", status=CriterionStatus.COMPLIANT, score=1.0, comment="Приветливый тон, структурированная речь, эталонный диалог."),
-            CriterionEvaluation(criterion_id="result", name="Результат консультации", status=CriterionStatus.COMPLIANT, score=1.0, comment="Вопрос полностью закрыт."),
-        ]
-
         return Call(
             metadata=meta,
             utterances=utterances,
@@ -483,144 +376,179 @@ class MFCDataGenerator:
             outcome=CallOutcome.RESOLVED_IN_CALL,
             overall_quality_score=100.0,
             has_critical_error=False,
-            criteria_evaluations=criteria,
             manager_status=ManagerStatus.RESOLVED,
             manager_notes="Отличная консультация. Рекомендовано использовать в качестве обучающего примера.",
         )
 
-    def _generate_additional_realistic_calls(self, count: int = 26) -> List[Call]:
-        """Генерирует дополнительные реалистичные звонки по разным темам и датам."""
+    def _generate_additional_realistic_calls(self, count: int = 28) -> List[Call]:
+        """Генерирует корпус реалистичных диалогов по разным темам, категориям и датам."""
         calls: List[Call] = []
 
-        templates = [
-            (
-                CallTopic.PROGRAM_CHOICE,
-                ApplicantCategory.APPLICANT_RF,
-                InquiryType.CONSULTATION,
-                "Проходные баллы на юриспруденцию",
-                [
-                    (SpeakerRole.OPERATOR, "Здравствуйте! МФЦ РУДН, оператор Игорь. Чем могу помочь?"),
-                    (SpeakerRole.APPLICANT, "Добрый день! Подскажите, какой проходной балл был на бюджет юриспруденции в прошлом году?"),
-                    (SpeakerRole.OPERATOR, "В прошлом году минимальный балл зачисленного на бюджет составил 286 баллов с учётом индивидуальных достижений. На платное обучение порог от 180 баллов."),
-                    (SpeakerRole.APPLICANT, "Спасибо большое!"),
-                    (SpeakerRole.OPERATOR, "Пожалуйста, ждём вас среди поступающих! Всего доброго."),
-                ],
-                CallOutcome.RESOLVED_IN_CALL,
-                96.0,
-                False,
-                None,
-            ),
+        dialogue_scenarios = [
+            # 1. ДВИ и прокторинг
             (
                 CallTopic.ENTRANCE_EXAMS,
                 ApplicantCategory.APPLICANT_RF,
                 InquiryType.PROCEDURE,
-                "Формат сдачи ДВИ по творческому конкурсу (Журналистика)",
                 [
                     (SpeakerRole.OPERATOR, "МФЦ РУДН, оператор Екатерина. Добрый день!"),
                     (SpeakerRole.APPLICANT, "Здравствуйте! Я подал документы на журналистику. Как будут проходить вступительные испытания — онлайн или очно в корпусе?"),
-                    (SpeakerRole.OPERATOR, "Творческое испытание проходит в дистанционном формате с системой прокторинга. Ссылка на подключение придёт в ваш личный кабинет за 2 дня до экзамена. Расписание доступно на сайте priem.rudn.ru в разделе 'Вступительные испытания'."),
-                    (SpeakerRole.APPLICANT, "А если камера отключится во время экзамена?"),
-                    (SpeakerRole.OPERATOR, "В случае технического сбоя составляется акт прокторинга, и вам предоставят резервный день. Приказ и инструкция по прокторингу есть в личном кабинете."),
-                    (SpeakerRole.APPLICANT, "Понятно, спасибо!"),
-                    (SpeakerRole.OPERATOR, "Успехов на экзамене! До свидания."),
+                    (SpeakerRole.OPERATOR, "Творческое испытание проходит в дистанционном формате с системой биометрического прокторинга. Ссылка на подключение придёт в ваш личный кабинет за 48 часов до экзамена. Расписание доступно на сайте priem.rudn.ru в разделе 'Вступительные испытания'."),
+                    (SpeakerRole.APPLICANT, "А если пропадет интернет во время экзамена?"),
+                    (SpeakerRole.OPERATOR, "В случае технического сбоя составляется электронный акт с техподдержкой, и вам предоставят резервный день сдачи. Инструкция есть в личном кабинете."),
+                    (SpeakerRole.APPLICANT, "Понятно, спасибо огромное!"),
+                    (SpeakerRole.OPERATOR, "Успехов на испытании! До свидания."),
                 ],
                 CallOutcome.RESOLVED_IN_CALL,
-                100.0,
-                False,
-                None,
+                "Приёмная комиссия РУДН (для граждан РФ)",
             ),
+            # 2. Квота СВО и льготы
             (
                 CallTopic.SPECIAL_RIGHTS_QUOTAS,
                 ApplicantCategory.PARENT,
                 InquiryType.CONSULTATION,
-                "Квота для участников СВО и их детей",
                 [
                     (SpeakerRole.OPERATOR, "МФЦ РУДН, здравствуйте! Чем могу помочь?"),
-                    (SpeakerRole.APPLICANT, "Добрый день. Мой сын поступает по отдельной квоте. Какие справки нужны для подтверждения?"),
-                    (SpeakerRole.OPERATOR, "Необходима официальная справка из военкомата или воинской части установленного образца. Вы можете прикрепить её скан на Госуслугах при подаче заявления или принести оригинал в ПК РФ."),
-                    (SpeakerRole.APPLICANT, "А он сдает экзамены или по ЕГЭ?"),
-                    (SpeakerRole.OPERATOR, "По отдельной квоте абитуриенты имеют право как использовать результаты ЕГЭ, так и сдать внутренние общеобразовательные вступительные испытания в РУДН."),
-                    (SpeakerRole.APPLICANT, "Спасибо, теперь ясно."),
-                    (SpeakerRole.OPERATOR, "Всего хорошего, до свидания!"),
+                    (SpeakerRole.APPLICANT, "Добрый день. Мой сын поступает по отдельной квоте для участников СВО. Какие документы нужны для подтверждения?"),
+                    (SpeakerRole.OPERATOR, "Необходима официальная справка из военкомата или воинской части установленного образца. Скан можно прикрепить на Госуслугах или предоставить оригинал в приёмную комиссию РУДН."),
+                    (SpeakerRole.APPLICANT, "А он сдает экзамены или учитываются баллы ЕГЭ?"),
+                    (SpeakerRole.OPERATOR, "По отдельной квоте абитуриенты имеют право как использовать баллы ЕГЭ, так и сдать внутренние общеобразовательные экзамены в РУДН."),
+                    (SpeakerRole.APPLICANT, "Спасибо большое, всё понятно!"),
+                    (SpeakerRole.OPERATOR, "Всего доброго, удачи при поступлении!"),
                 ],
                 CallOutcome.RESOLVED_IN_CALL,
-                98.0,
-                False,
-                None,
+                "Приёмная комиссия РУДН (для граждан РФ)",
             ),
+            # 3. Справка для военкомата в МФЦ
             (
                 CallTopic.MFC_SERVICES,
                 ApplicantCategory.STUDENT,
                 InquiryType.PROCEDURE,
-                "Справка об обучении для военкомата (Приложение №4)",
                 [
                     (SpeakerRole.OPERATOR, "МФЦ РУДН, оператор Максим. Слушаю вас."),
-                    (SpeakerRole.APPLICANT, "Приветствую! Я студент 2 курса филфака. Мне нужна справка с гербовой печатью для военкомата. Как её заказать?"),
-                    (SpeakerRole.OPERATOR, "Добрый день! Справку для военкомата (Приложение №4) вы можете заказать онлайн через Единый личный кабинет студента в разделе 'Услуги МФЦ'. Срок изготовления — 3 рабочих дня. Смс-уведомление придёт, когда она будет готова к выдаче в холле главного корпуса."),
-                    (SpeakerRole.APPLICANT, "Понял, сделаю через ЛК. Спасибо!"),
-                    (SpeakerRole.OPERATOR, "Всего доброго!"),
+                    (SpeakerRole.APPLICANT, "Приветствую! Я студент 2 курса филологического факультета. Мне срочно нужна справка для военкомата по форме Приложение 4. Как её заказать?"),
+                    (SpeakerRole.OPERATOR, "Добрый день! Справку для военкомата вы заказываете онлайн через Единый личный кабинет студента в разделе 'Услуги МФЦ'. Срок оформления — до 3 рабочих дней. Смс придет, когда она будет готова к выдаче в холле Главного корпуса."),
+                    (SpeakerRole.APPLICANT, "Отлично, отправлю заявку в ЛК прямо сейчас."),
+                    (SpeakerRole.OPERATOR, "Прекрасно! Хорошего вам дня."),
                 ],
                 CallOutcome.RESOLVED_IN_CALL,
-                95.0,
-                False,
-                None,
+                "Многофункциональный центр РУДН",
             ),
+            # 4. Материнский капитал
             (
                 CallTopic.CONTRACT_AND_PAYMENT,
-                ApplicantCategory.APPLICANT_RF,
+                ApplicantCategory.PARENT,
                 InquiryType.PROCEDURE,
-                "Оплата материнским капиталом",
                 [
                     (SpeakerRole.OPERATOR, "МФЦ РУДН, оператор Ксения. Здравствуйте!"),
-                    (SpeakerRole.APPLICANT, "Здравствуйте! Мы хотим оплатить обучение материнским капиталом. Как оформить дополнительное соглашение?"),
-                    (SpeakerRole.OPERATOR, "Для оплаты маткапиталом вам необходимо обратиться в юридический отдел приёмной комиссии с сертификатом и СНИЛС владельца сертификата. РУДН оформляет трехсторонний договор, который затем передается в Социальный фонд. Сейчас переведу вас на специалиста договорного отдела для записи."),
-                    (SpeakerRole.APPLICANT, "Хорошо, соедините, пожалуйста."),
-                    (SpeakerRole.OPERATOR, "Перевожу вызов. Ожидайте ответа."),
+                    (SpeakerRole.APPLICANT, "Здравствуйте! Мы хотим оплатить обучение дочери материнским капиталом. Как оформить документы?"),
+                    (SpeakerRole.OPERATOR, "Для оплаты маткапиталом оформляется трехстороннее соглашение. Вам понадобятся сертификат, СНИЛС владельца и паспорт. Сейчас я переведу вас на специалиста договорного отдела бухгалтерии для сверки реквизитов."),
+                    (SpeakerRole.APPLICANT, "Да, соедините, пожалуйста."),
+                    (SpeakerRole.OPERATOR, "Перевожу звонок. Пожалуйста, оставайтесь на линии."),
                 ],
                 CallOutcome.TRANSFERRED,
-                88.0,
-                False,
-                None,
+                "Управление бухгалтерского учёта и финансового контроля",
             ),
+            # 5. Сбой на Госуслугах при подаче согласия
             (
                 CallTopic.APPLICATION_AND_STATUS,
                 ApplicantCategory.APPLICANT_RF,
                 InquiryType.TECHNICAL_ISSUE,
-                "Зависла кнопка отправки согласия в личном кабинете",
                 [
-                    (SpeakerRole.OPERATOR, "Контакт-центр МФЦ, оператор Артём. Слушаю вас!"),
-                    (SpeakerRole.APPLICANT, "Здравствуйте! У меня в личном кабинете кнопка 'Подать согласие' серая и не нажимается! Что делать?"),
-                    (SpeakerRole.OPERATOR, "Проверьте, прикреплена ли скан-копия документа об образовании и заполнено ли поле с паспортными данными законного представителя, если вам меньше 18 лет."),
-                    (SpeakerRole.APPLICANT, "Ой, точно, паспорт мамы не был прикреплен! Спасибо огромное!"),
-                    (SpeakerRole.OPERATOR, "Пожалуйста! Нажмите 'Сохранить', и кнопка станет активной. Удачи!"),
+                    (SpeakerRole.OPERATOR, "Контакт-центр МФЦ РУДН, оператор Артём. Слушаю вас!"),
+                    (SpeakerRole.APPLICANT, "Здравствуйте! В личном кабинете кнопка 'Подать оригинал и согласие' серая и не нажимается! Что делать?"),
+                    (SpeakerRole.OPERATOR, "Проверьте, прикреплена ли скан-копия аттестата и согласие законного представителя, если вам нет 18 лет. После загрузки документов нажмите кнопку 'Сохранить' внизу анкеты."),
+                    (SpeakerRole.APPLICANT, "Ой, точно, согласие мамы не сохранилось! Сейчас загрузил, и кнопка стала синей!"),
+                    (SpeakerRole.OPERATOR, "Отлично! Главное не забудьте отправить до 5 августа 12:00 МСК. Удачи!"),
                 ],
                 CallOutcome.RESOLVED_IN_CALL,
-                100.0,
-                False,
-                None,
+                "Приёмная комиссия РУДН (для граждан РФ)",
+            ),
+            # 6. Целевое обучение и "Работа в России"
+            (
+                CallTopic.SPECIAL_RIGHTS_QUOTAS,
+                ApplicantCategory.APPLICANT_RF,
+                InquiryType.CONSULTATION,
+                [
+                    (SpeakerRole.OPERATOR, "МФЦ РУДН, оператор Полина. Здравствуйте!"),
+                    (SpeakerRole.APPLICANT, "Здравствуйте! Я хочу поступить по целевой квоте от больницы. Где регистрировать заявку?"),
+                    (SpeakerRole.OPERATOR, "Все заявки на целевое обучение подаются строго через цифровую платформу 'Работа в России' и дублируются на Госуслугах при подаче заявления. Договор заключается в электронном виде с заказчиком."),
+                    (SpeakerRole.APPLICANT, "А в сам РУДН нужно привозить договор?"),
+                    (SpeakerRole.OPERATOR, "Нет, при электронной подаче данные подтягиваются автоматически из системы 'Работа в России'."),
+                    (SpeakerRole.APPLICANT, "Спасибо за подробное разъяснение!"),
+                    (SpeakerRole.OPERATOR, "Всего хорошего, ждем вас в РУДН!"),
+                ],
+                CallOutcome.RESOLVED_IN_CALL,
+                "Приёмная комиссия РУДН (для граждан РФ)",
+            ),
+            # 7. Проходные баллы и конкурсная ситуация
+            (
+                CallTopic.PROGRAM_CHOICE,
+                ApplicantCategory.APPLICANT_RF,
+                InquiryType.CONSULTATION,
+                [
+                    (SpeakerRole.OPERATOR, "Здравствуйте! МФЦ РУДН, оператор Денис. Чем могу помочь?"),
+                    (SpeakerRole.APPLICANT, "Добрый день! Подскажите, какой проходной балл на международные отношения на бюджет? У меня 291 балл."),
+                    (SpeakerRole.OPERATOR, "В прошлом году проходной балл составил 288 баллов. С 291 баллом ваши шансы очень высоки! Обязательно отслеживайте конкурсный список с 27 июля."),
+                    (SpeakerRole.APPLICANT, "Отлично, спасибо большое!"),
+                    (SpeakerRole.OPERATOR, "Пожалуйста, ждём ваше согласие. До свидания!"),
+                ],
+                CallOutcome.RESOLVED_IN_CALL,
+                "Приёмная комиссия РУДН (для граждан РФ)",
+            ),
+            # 8. Международный студент (правильная консультация)
+            (
+                CallTopic.INTERNATIONAL_QUESTIONS,
+                ApplicantCategory.APPLICANT_INT,
+                InquiryType.PROCEDURE,
+                [
+                    (SpeakerRole.OPERATOR, "Контакт-центр МФЦ РУДН, оператор Алиса. Добрый день!"),
+                    (SpeakerRole.APPLICANT, "Здравствуйте! Я гражданка Казахстана. Подскажите, через какой портал мне подавать документы на магистратуру?"),
+                    (SpeakerRole.OPERATOR, "Добрый день! Иностранные абитуриенты подают документы через наш международный портал intstudent.rudn.ru. Понадобится паспорт, нотариальный перевод на русский язык и диплом бакалавра с легализацией."),
+                    (SpeakerRole.APPLICANT, "А на Госуслугах нужно регистрироваться?"),
+                    (SpeakerRole.OPERATOR, "Нет, для иностранных граждан подача идёт исключительно через intstudent.rudn.ru. Если возникнут вопросы по визе, я могу переключить вас на международный отдел."),
+                    (SpeakerRole.APPLICANT, "Спасибо, теперь всё предельно ясно!"),
+                    (SpeakerRole.OPERATOR, "Всего доброго! Ждём вас в РУДН."),
+                ],
+                CallOutcome.RESOLVED_IN_CALL,
+                "Департамент рекрутинга и сопровождения иностранных обучающихся",
+            ),
+            # 9. Пропуск и кампусная карта сотрудника
+            (
+                CallTopic.MFC_SERVICES,
+                ApplicantCategory.STAFF,
+                InquiryType.PROCEDURE,
+                [
+                    (SpeakerRole.OPERATOR, "МФЦ РУДН, оператор Роман. Слушаю вас."),
+                    (SpeakerRole.APPLICANT, "Здравствуйте, я новый преподаватель кафедры иностранных языков. Как мне оформить электронный пропуск в кампус?"),
+                    (SpeakerRole.OPERATOR, "Здравствуйте! Вам необходимо подойти в окно №4 МФЦ в Главном корпусе с паспортом и трудовым договором. Фотографирование и выдача кампусной карты занимают 5 минут."),
+                    (SpeakerRole.APPLICANT, "Спасибо, сегодня же зайду."),
+                    (SpeakerRole.OPERATOR, "Пожалуйста, рады видеть вас в команде РУДН!"),
+                ],
+                CallOutcome.RESOLVED_IN_CALL,
+                "Многофункциональный центр РУДН",
             ),
         ]
 
-        base_start = datetime(2026, 6, 25, 10, 0)
+        base_start = datetime(2026, 6, 25, 9, 30)
 
         for i in range(count):
-            tpl = templates[i % len(templates)]
-            topic, category, inq_type, title, dialog, outcome, score, is_crit, crit_sum = tpl
-            
-            call_id = f"CALL-2026-{self.rng.randint(6, 8):02d}{self.rng.randint(1, 28):02d}-{100 + i:03d}"
-            ucid = f"UCID-{self.rng.randint(880000000, 889999999)}"
-            day_offset = self.rng.randint(0, 55)
-            hour = self.rng.choice([10, 11, 12, 14, 15, 16, 17])
+            tpl = dialogue_scenarios[i % len(dialogue_scenarios)]
+            topic, category, inq_type, dialog, outcome, target_dept = tpl
+
+            month = self.rng.choice([6, 7, 8])
+            day = self.rng.randint(1, 28)
+            hour = self.rng.choice([9, 10, 11, 12, 14, 15, 16, 17, 18])
             minute = self.rng.randint(0, 59)
-            call_time = base_start + timedelta(days=day_offset, hours=hour, minutes=minute)
-            
-            # Разброс оценок для естественности
-            adjusted_score = round(max(30.0, min(100.0, score + self.rng.uniform(-10.0, 4.0))), 1)
+            call_time = datetime(2026, month, day, hour, minute)
+
+            call_id = f"CALL-2026-{month:02d}{day:02d}-{100 + i:03d}"
+            ucid = f"UCID-{self.rng.randint(881000000, 889999999)}"
 
             utterances: List[Utterance] = []
             curr_ms = 0
             for uid, (spk, text) in enumerate(dialog, start=1):
-                duration_ms = len(text) * 70 + self.rng.randint(400, 1200)
+                duration_ms = len(text) * 72 + self.rng.randint(400, 1100)
                 utterances.append(Utterance(
                     id=uid,
                     speaker=spk,
@@ -628,10 +556,11 @@ class MFCDataGenerator:
                     end_ms=curr_ms + duration_ms,
                     text=text,
                 ))
-                curr_ms += duration_ms + self.rng.randint(300, 800)
+                curr_ms += duration_ms + self.rng.randint(300, 700)
 
             duration_sec = int(curr_ms / 1000)
-            regime = LoadRegime.HIGH if hour in (11, 12, 16) else LoadRegime.TYPICAL
+            is_peak = hour in (10, 11, 12, 16) and day in (20, 25, 4, 5, 21, 24)
+            regime = LoadRegime.HIGH if is_peak else (LoadRegime.TYPICAL if hour in (11, 12, 16) else LoadRegime.LOW)
 
             meta = CallMetadata(
                 call_id=call_id,
@@ -642,17 +571,8 @@ class MFCDataGenerator:
                 load_regime=regime,
                 operator_pseudonym=f"Оператор №{self.rng.randint(1, 25):02d}",
                 applicant_pseudonym=_pseudonymize(f"caller_{call_id}"),
-                is_repeat_call=(i % 7 == 0),
+                is_repeat_call=(i % 5 == 0),
             )
-
-            criteria = [
-                CriterionEvaluation(criterion_id="understanding", name="Понимание вопроса", status=CriterionStatus.COMPLIANT, score=1.0),
-                CriterionEvaluation(criterion_id="accuracy", name="Точность информации", status=CriterionStatus.COMPLIANT if adjusted_score > 60 else CriterionStatus.VIOLATED, score=adjusted_score / 100.0),
-                CriterionEvaluation(criterion_id="completeness", name="Полнота ответа", status=CriterionStatus.COMPLIANT if adjusted_score > 70 else CriterionStatus.VIOLATED, score=adjusted_score / 100.0),
-                CriterionEvaluation(criterion_id="routing", name="Маршрутизация", status=CriterionStatus.COMPLIANT, score=1.0),
-                CriterionEvaluation(criterion_id="communication", name="Стандарты коммуникации", status=CriterionStatus.COMPLIANT, score=0.95),
-                CriterionEvaluation(criterion_id="result", name="Результат консультации", status=CriterionStatus.COMPLIANT if outcome != CallOutcome.UNRESOLVED else CriterionStatus.VIOLATED, score=1.0),
-            ]
 
             calls.append(Call(
                 metadata=meta,
@@ -661,13 +581,9 @@ class MFCDataGenerator:
                 topic=topic,
                 applicant_category=category,
                 inquiry_type=inq_type,
-                target_department="Приёмная комиссия РУДН" if topic != CallTopic.MFC_SERVICES else "МФЦ РУДН",
+                target_department=target_dept,
                 outcome=outcome,
-                overall_quality_score=adjusted_score,
-                has_critical_error=is_crit,
-                critical_error_summary=crit_sum,
-                criteria_evaluations=criteria,
-                manager_status=ManagerStatus.PENDING if adjusted_score < 80 else ManagerStatus.RESOLVED,
+                manager_status=ManagerStatus.PENDING if (i % 4 == 0) else ManagerStatus.RESOLVED,
             ))
 
         return calls

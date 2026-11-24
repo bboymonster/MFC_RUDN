@@ -61,11 +61,28 @@ class LoadRegime(str, Enum):
 
 class ManagerStatus(str, Enum):
     """Статус проверки карточки руководителем."""
-    PENDING = "Требует проверки"
+    PENDING = "Ожидает проверки"
     CONFIRMED = "Нарушение подтверждено"
-    REJECTED = "Ложный сигнал (отклонено)"
+    REJECTED = "Ложное срабатывание"
     ACTION_ASSIGNED = "Назначено действие"
-    RESOLVED = "Проверено, без замечаний"
+    RESOLVED = "Проверено / замечаний нет"
+
+    @classmethod
+    def _missing_(cls, value):
+        if not isinstance(value, str):
+            return None
+        val_lower = value.strip().lower()
+        if "требует" in val_lower or "ожидает" in val_lower:
+            return cls.PENDING
+        if "подтвержд" in val_lower:
+            return cls.CONFIRMED
+        if "ложн" in val_lower or "отклон" in val_lower:
+            return cls.REJECTED
+        if "действ" in val_lower or "назнач" in val_lower:
+            return cls.ACTION_ASSIGNED
+        if "проверен" in val_lower or "без замечаний" in val_lower:
+            return cls.RESOLVED
+        return None
 
 
 class CriterionStatus(str, Enum):

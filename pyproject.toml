@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mfc-rudn-analytics"
-version = "0.1.0"
+version = "0.2.0"
 description = "Интеллектуальная аналитика звонков контакт-центра МФЦ РУДН"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -12,6 +12,7 @@ dependencies = [
     "fastapi>=0.110.0",
     "uvicorn>=0.28.0",
     "pydantic>=2.6.0",
+    "python-multipart>=0.0.9",
 ]
 
 [project.optional-dependencies]
@@ -19,3 +20,8 @@ dev = [
     "pytest>=8.0.0",
     "httpx>=0.27.0",
 ]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+addopts = "-v"
