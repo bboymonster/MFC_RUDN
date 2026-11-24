@@ -12,7 +12,6 @@
     .rudn-blue { background-color: #003366; }
     .rudn-accent { color: #0066cc; }
     .bg-rudn-light { background-color: #f4f7fa; }
-    .waveform-bar { transition: height 0.2s ease; }
     .tab-active { border-bottom: 3px solid #0066cc; color: #003366; font-weight: 600; }
   </style>
 </head>
@@ -28,7 +27,7 @@
         <div>
           <div class="flex items-center space-x-2">
             <span class="font-bold text-lg tracking-wide">РУДН</span>
-            <span class="text-xs bg-sky-500/30 text-sky-200 px-2 py-0.5 rounded-full font-semibold border border-sky-400/30">МФЦ Контакт-центр</span>
+            <span class="text-xs bg-sky-500/30 text-sky-200 px-2 py-0.5 rounded-full font-semibold border border-sky-400/30">МФЦ Контакт-центр v0.2</span>
           </div>
           <p class="text-xs text-slate-300">Интеллектуальная аналитика звонков и контроль качества консультаций</p>
         </div>
@@ -36,26 +35,35 @@
 
       <!-- Переключатель вкладок -->
       <nav class="hidden md:flex space-x-1">
-        <button onclick="switchTab('overview')" id="tab-btn-overview" class="px-4 py-2 text-sm rounded-md hover:bg-white/10 transition flex items-center space-x-2">
+        <button onclick="switchTab('overview')" id="tab-btn-overview" class="px-3 py-2 text-sm rounded-md hover:bg-white/10 transition flex items-center space-x-1.5">
           <i class="fa-solid fa-chart-pie"></i><span>Обзор</span>
         </button>
-        <button onclick="switchTab('queue')" id="tab-btn-queue" class="px-4 py-2 text-sm rounded-md hover:bg-white/10 transition flex items-center space-x-2">
+        <button onclick="switchTab('queue')" id="tab-btn-queue" class="px-3 py-2 text-sm rounded-md hover:bg-white/10 transition flex items-center space-x-1.5">
           <i class="fa-solid fa-list-check"></i><span>Очередь проверки</span>
           <span id="badge-pending-count" class="bg-red-500 text-white text-xs px-1.5 py-0.2 rounded-full hidden">0</span>
         </button>
-        <button onclick="switchTab('card')" id="tab-btn-card" class="px-4 py-2 text-sm rounded-md hover:bg-white/10 transition flex items-center space-x-2">
+        <button onclick="switchTab('card')" id="tab-btn-card" class="px-3 py-2 text-sm rounded-md hover:bg-white/10 transition flex items-center space-x-1.5">
           <i class="fa-solid fa-file-waveform"></i><span>Карточка звонка</span>
         </button>
-        <button onclick="switchTab('actions')" id="tab-btn-actions" class="px-4 py-2 text-sm rounded-md hover:bg-white/10 transition flex items-center space-x-2">
+        <button onclick="switchTab('kb')" id="tab-btn-kb" class="px-3 py-2 text-sm rounded-md hover:bg-white/10 transition flex items-center space-x-1.5">
+          <i class="fa-solid fa-book-bookmark"></i><span>База знаний</span>
+        </button>
+        <button onclick="switchTab('actions')" id="tab-btn-actions" class="px-3 py-2 text-sm rounded-md hover:bg-white/10 transition flex items-center space-x-1.5">
           <i class="fa-solid fa-bullseye"></i><span>Системные меры</span>
         </button>
-        <button onclick="switchTab('lab')" id="tab-btn-lab" class="px-4 py-2 text-sm rounded-md hover:bg-white/10 transition flex items-center space-x-2">
+        <button onclick="switchTab('lab')" id="tab-btn-lab" class="px-3 py-2 text-sm rounded-md hover:bg-white/10 transition flex items-center space-x-1.5">
           <i class="fa-solid fa-flask"></i><span>Тест-стенд</span>
         </button>
       </nav>
 
-      <div class="flex items-center space-x-3 text-xs text-slate-300">
-        <span class="inline-flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>База знаний: Лето 2026</span>
+      <!-- Кнопки действий в шапке -->
+      <div class="flex items-center space-x-2">
+        <button onclick="openUploadModal()" class="px-3 py-1.5 bg-sky-500 hover:bg-sky-600 text-white text-xs font-semibold rounded-lg shadow-sm flex items-center gap-1.5 transition">
+          <i class="fa-solid fa-cloud-arrow-up"></i> Загрузить звонок
+        </button>
+        <button onclick="openCmsModal()" class="px-3 py-1.5 bg-white/15 hover:bg-white/25 text-white text-xs font-semibold rounded-lg border border-white/20 flex items-center gap-1.5 transition">
+          <i class="fa-solid fa-file-csv"></i> Импорт CMS
+        </button>
       </div>
     </div>
   </header>
@@ -66,20 +74,20 @@
     <!-- ==================== ВКЛАДКА 1: ОБЗОР ==================== -->
     <section id="tab-overview" class="space-y-6">
       
-      <!-- Приветствие и баннер контекста -->
+      <!-- Баннер контекста -->
       <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 class="text-xl font-bold text-slate-900">Панель управления руководителя контакт-центра</h1>
           <p class="text-sm text-slate-500 mt-1">
-            Пакетный анализ телефонных обращений приёмной кампании 2026 года со связкой с интервалами Avaya CMS.
+            Пакетный анализ телефонных обращений приёмной кампании 2026 года со связкой с интервалами Avaya CMS и защитой ПДн по 152-ФЗ.
           </p>
         </div>
         <div class="flex flex-wrap gap-2 text-xs">
+          <a href="/api/reports/export" target="_blank" class="px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 font-semibold border border-emerald-200 hover:bg-emerald-100 flex items-center gap-1.5 transition">
+            <i class="fa-solid fa-file-excel"></i> Экспорт реестра (CSV)
+          </a>
           <span class="px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 font-medium border border-blue-200 flex items-center gap-1.5">
-            <i class="fa-regular fa-calendar"></i> Период: 20 июня — 28 августа 2026
-          </span>
-          <span class="px-3 py-1.5 rounded-lg bg-amber-50 text-amber-700 font-medium border border-amber-200 flex items-center gap-1.5">
-            <i class="fa-solid fa-triangle-exclamation"></i> Пиковые дни согласий и оплат
+            <i class="fa-regular fa-calendar"></i> Лето 2026 (Приём)
           </span>
         </div>
       </div>
@@ -91,7 +99,7 @@
           <div class="text-xs font-medium text-slate-500 uppercase tracking-wider">Всего звонков</div>
           <div id="kpi-total-calls" class="text-2xl font-bold text-slate-900 mt-1">--</div>
           <div class="text-xs text-slate-500 mt-1 flex items-center gap-1">
-            <i class="fa-solid fa-database text-sky-600"></i> в реестре аудио
+            <i class="fa-solid fa-database text-sky-600"></i> в реестре
           </div>
         </div>
 
@@ -99,7 +107,7 @@
           <div class="text-xs font-medium text-slate-500 uppercase tracking-wider">Индекс качества</div>
           <div id="kpi-avg-score" class="text-2xl font-bold text-emerald-600 mt-1">--%</div>
           <div class="text-xs text-slate-500 mt-1 flex items-center gap-1">
-            <i class="fa-solid fa-shield-halved text-emerald-600"></i> по 6 критериям
+            <i class="fa-solid fa-shield-halved text-emerald-600"></i> 6 критериев
           </div>
         </div>
 
@@ -115,7 +123,7 @@
           <div class="text-xs font-medium text-slate-500 uppercase tracking-wider">Крит. ошибки</div>
           <div id="kpi-critical-count" class="text-2xl font-bold text-red-600 mt-1">--</div>
           <div class="text-xs text-red-500 mt-1 font-medium flex items-center gap-1">
-            <i class="fa-solid fa-circle-exclamation"></i> требуют разбора
+            <i class="fa-solid fa-circle-exclamation"></i> требуют мер
           </div>
         </div>
 
@@ -128,10 +136,10 @@
         </div>
 
         <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-200">
-          <div class="text-xs font-medium text-slate-500 uppercase tracking-wider">Ср. ожидание ASA</div>
-          <div id="kpi-asa" class="text-2xl font-bold text-slate-800 mt-1">-- с</div>
+          <div class="text-xs font-medium text-slate-500 uppercase tracking-wider">Связка с CMS</div>
+          <div id="kpi-match-rate" class="text-2xl font-bold text-slate-800 mt-1">--%</div>
           <div class="text-xs text-slate-500 mt-1 flex items-center gap-1">
-            <i class="fa-solid fa-clock text-slate-500"></i> Avaya CMS
+            <i class="fa-solid fa-link text-sky-600"></i> по времени/UCID
           </div>
         </div>
 
@@ -140,7 +148,6 @@
       <!-- Графики и распределение тем -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        <!-- Распределение тем -->
         <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200 lg:col-span-2">
           <div class="flex justify-between items-center mb-4">
             <h2 class="font-bold text-slate-900 text-base flex items-center gap-2">
@@ -148,23 +155,18 @@
             </h2>
             <span class="text-xs text-slate-400">Автоклассификация речи</span>
           </div>
-          <div id="topic-bars-container" class="space-y-3">
-            <!-- Заполняется динамически -->
-          </div>
+          <div id="topic-bars-container" class="space-y-3"></div>
         </div>
 
-        <!-- Категории заявителей -->
         <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200">
           <div class="flex justify-between items-center mb-4">
             <h2 class="font-bold text-slate-900 text-base flex items-center gap-2">
               <i class="fa-solid fa-users text-sky-600"></i> Сегменты заявителей
             </h2>
           </div>
-          <div id="category-bars-container" class="space-y-3">
-            <!-- Заполняется динамически -->
-          </div>
+          <div id="category-bars-container" class="space-y-3"></div>
           <div class="mt-6 pt-4 border-t border-slate-100 text-xs text-slate-500">
-            <p><i class="fa-solid fa-info-circle text-sky-500"></i> Псевдонимизация выполнена в соответствии с 152-ФЗ. Голосовые биометрические данные не сохраняются.</p>
+            <p><i class="fa-solid fa-shield text-emerald-600"></i> 152-ФЗ активен: телефоны, паспорта и СНИЛС маскируются до записи в аналитику.</p>
           </div>
         </div>
 
@@ -174,15 +176,13 @@
       <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200">
         <div class="flex justify-between items-center mb-4">
           <h2 class="font-bold text-slate-900 text-base flex items-center gap-2">
-            <i class="fa-solid fa-triangle-exclamation text-red-500"></i> Звонки с подтверждёнными критическими ошибками
+            <i class="fa-solid fa-triangle-exclamation text-red-500"></i> Звонки с критическими ошибками консультаций
           </h2>
           <button onclick="switchTab('queue'); filterCriticalOnly();" class="text-xs text-blue-600 hover:underline font-medium">
             Все проблемные звонки &rarr;
           </button>
         </div>
-        <div id="critical-calls-list" class="space-y-3">
-          <!-- Заполняется динамически -->
-        </div>
+        <div id="critical-calls-list" class="space-y-3"></div>
       </div>
 
     </section>
@@ -244,9 +244,7 @@
                 <th class="px-4 py-3 text-right">Действие</th>
               </tr>
             </thead>
-            <tbody id="calls-table-body" class="divide-y divide-slate-100">
-              <!-- Заполняется динамически -->
-            </tbody>
+            <tbody id="calls-table-body" class="divide-y divide-slate-100"></tbody>
           </table>
         </div>
       </div>
@@ -285,15 +283,15 @@
             </div>
           </div>
 
-          <!-- Кнопки решения руководителя -->
+          <!-- Решения руководителя (Human in the loop) -->
           <div class="flex items-center space-x-2">
-            <button onclick="updateManagerStatus('Нарушение подтверждено')" class="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-lg shadow-sm flex items-center gap-1.5">
-              <i class="fa-solid fa-circle-check"></i> Подтвердить нарушение
+            <button onclick="submitManagerReview('Нарушение подтверждено')" class="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-lg shadow-sm flex items-center gap-1.5 transition">
+              <i class="fa-solid fa-circle-check"></i> Подтвердить
             </button>
-            <button onclick="updateManagerStatus('Ложный сигнал (отклонено)')" class="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold rounded-lg flex items-center gap-1.5">
+            <button onclick="submitManagerReview('Ложный сигнал (отклонено)')" class="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold rounded-lg flex items-center gap-1.5 transition">
               <i class="fa-solid fa-xmark"></i> Отклонить
             </button>
-            <button onclick="updateManagerStatus('Проверено, без замечаний')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg flex items-center gap-1.5">
+            <button onclick="submitManagerReview('Проверено, без замечаний')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg flex items-center gap-1.5 transition">
               <i class="fa-solid fa-check"></i> Согласовать
             </button>
           </div>
@@ -301,81 +299,97 @@
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
           
-          <!-- Левая колонка: Аудиоплеер и Транскрипт (7 колонок) -->
+          <!-- Левая колонка: Осциллограмма аудио и транскрипт -->
           <div class="lg:col-span-7 space-y-4">
             
-            <!-- Плеер аудиозаписи (симуляция потока Avaya) -->
-            <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-200">
-              <div class="flex items-center justify-between mb-3 text-xs text-slate-500 font-medium">
-                <span class="flex items-center gap-1"><i class="fa-solid fa-headphones text-sky-600"></i> Аудиозапись Avaya (стерео)</span>
-                <span id="player-time-display">00:00 / 00:00</span>
+            <!-- Интерактивная звуковая дорожка / Wavesurfer -->
+            <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-200 space-y-3">
+              <div class="flex items-center justify-between text-xs text-slate-500 font-medium">
+                <span class="flex items-center gap-1.5"><i class="fa-solid fa-waveform-lines text-sky-600"></i> Аудиопоток Avaya (осциллограмма речи)</span>
+                <span id="player-time-display" class="font-mono font-bold text-slate-700">00:00 / 00:00</span>
               </div>
               
+              <!-- Визуальная осциллограмма с цветными метками -->
+              <div id="waveform-canvas-box" class="h-16 w-full bg-slate-900 rounded-lg p-2 flex items-center justify-between gap-1 overflow-hidden relative cursor-pointer" onclick="clickWaveform(event)">
+                <!-- Заполняется динамически звуковыми барами -->
+              </div>
+
               <div class="flex items-center space-x-4">
                 <button id="player-play-btn" onclick="togglePlayAudio()" class="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center hover:bg-blue-700 shadow transition">
                   <i id="player-play-icon" class="fa-solid fa-play"></i>
                 </button>
 
-                <!-- Интерактивная шкала времени -->
                 <div class="flex-grow">
                   <input type="range" id="player-scrubber" min="0" max="100" value="0" oninput="scrubAudio(this.value)" class="w-full accent-blue-600 cursor-pointer h-2 bg-slate-200 rounded-lg">
                 </div>
 
-                <div class="text-xs text-slate-500">
-                  <span class="px-2 py-1 bg-slate-100 rounded text-slate-600 font-mono font-semibold">1.0x</span>
+                <div class="flex items-center gap-2 text-xs text-slate-500">
+                  <span class="px-2 py-0.5 bg-slate-100 rounded text-slate-600 font-semibold font-mono">Стерео 16kHz</span>
                 </div>
               </div>
             </div>
 
-            <!-- Транскрипт диалога -->
+            <!-- Стенограмма звонка -->
             <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200">
               <div class="flex justify-between items-center mb-4 pb-2 border-b border-slate-100">
                 <h3 class="font-bold text-slate-900 text-sm flex items-center gap-2">
-                  <i class="fa-solid fa-comments text-sky-600"></i> Стенограмма звонка с таймкодами
+                  <i class="fa-solid fa-comments text-sky-600"></i> Стенограмма с распознаванием ролей
                 </h3>
-                <span class="text-xs text-slate-400">Нажмите на время реплики для перехода</span>
+                <span class="text-xs text-slate-400">Кликните на реплику для перемотки</span>
               </div>
               
-              <div id="card-utterances-list" class="space-y-3 max-h-[500px] overflow-y-auto pr-2">
-                <!-- Заполняется динамически -->
-              </div>
+              <div id="card-utterances-list" class="space-y-3 max-h-[500px] overflow-y-auto pr-2"></div>
             </div>
 
           </div>
 
-          <!-- Правая колонка: 6 критериев и эталонные правила (5 колонок) -->
+          <!-- Правая колонка: 6 критериев, эталон и ручная корректировка -->
           <div class="lg:col-span-5 space-y-4">
             
             <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200">
               <h3 class="font-bold text-slate-900 text-sm flex items-center gap-2 mb-4 pb-2 border-b border-slate-100">
-                <i class="fa-solid fa-scale-balanced text-sky-600"></i> Оценка по 6 критериям качества
+                <i class="fa-solid fa-scale-balanced text-sky-600"></i> Результаты проверки по 6 критериям
               </h3>
-              
-              <div id="card-criteria-list" class="space-y-3">
-                <!-- Заполняется динамически -->
-              </div>
+              <div id="card-criteria-list" class="space-y-3"></div>
             </div>
 
-            <!-- Доказательная база и эталон РУДН -->
+            <!-- Доказательная база -->
             <div id="card-evidence-box" class="bg-amber-50 rounded-xl p-4 border border-amber-200 hidden">
               <div class="flex items-center gap-2 text-amber-900 font-bold text-xs uppercase mb-2">
                 <i class="fa-solid fa-gavel text-amber-600"></i> Доказательство нарушения и эталон
               </div>
-              <div id="card-evidence-content" class="text-xs text-amber-950 space-y-2">
-                <!-- Заполняется динамически -->
-              </div>
+              <div id="card-evidence-content" class="text-xs text-amber-950 space-y-2"></div>
             </div>
 
-            <!-- Заметки руководителя -->
-            <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-200">
-              <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
-                Решение руководителя / Комментарий
-              </label>
-              <textarea id="card-manager-notes" rows="3" placeholder="Введите поручение или обоснование решения..." 
+            <!-- Связанный интервал CMS -->
+            <div id="card-cms-box" class="bg-sky-50 rounded-xl p-4 border border-sky-200 text-xs text-sky-950 space-y-1 hidden">
+              <div class="font-bold text-sky-900 flex items-center gap-1.5 uppercase text-[11px]">
+                <i class="fa-solid fa-chart-simple"></i> Сопоставленный срез телефонии Avaya CMS
+              </div>
+              <div id="card-cms-content" class="pt-1"></div>
+            </div>
+
+            <!-- Human-in-the-Loop панель корректировки руководителя -->
+            <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-200 space-y-3">
+              <div class="flex justify-between items-center">
+                <label class="text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                  Корректировка эксперта (HitL)
+                </label>
+                <span class="text-[11px] text-slate-400">Сохранение для дообучения</span>
+              </div>
+              
+              <div class="flex items-center gap-2">
+                <span class="text-xs text-slate-600">Скорректировать балл:</span>
+                <input type="number" id="card-override-score" min="0" max="100" class="w-16 px-2 py-1 text-xs border border-slate-300 rounded font-bold text-slate-800">
+                <span class="text-xs text-slate-400">%</span>
+              </div>
+
+              <textarea id="card-manager-notes" rows="3" placeholder="Введите обоснование вердикта или поручение оператору..." 
                         class="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
-              <div class="mt-2 flex justify-end">
-                <button onclick="saveNotesOnly()" class="px-3 py-1 bg-slate-800 hover:bg-slate-900 text-white text-xs font-medium rounded-lg">
-                  Сохранить заметку
+              
+              <div class="flex justify-end">
+                <button onclick="saveNotesOnly()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold rounded-lg shadow-sm transition">
+                  Сохранить вердикт
                 </button>
               </div>
             </div>
@@ -389,40 +403,55 @@
     </section>
 
 
-    <!-- ==================== ВКЛАДКА 4: СИСТЕМНЫЕ МЕРЫ ==================== -->
-    <section id="tab-actions" class="hidden space-y-6">
+    <!-- ==================== ВКЛАДКА 4: БАЗА ЗНАНИЙ ==================== -->
+    <section id="tab-kb" class="hidden space-y-6">
       
-      <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200">
-        <h2 class="text-lg font-bold text-slate-900">Выявленные системные проблемы и управленческие меры</h2>
-        <p class="text-sm text-slate-500 mt-1">
-          Автоматически сформированный реестр действий на основе кластеризации повторяющихся ошибок, пробелов в FAQ и узких мест маршрутизации.
-        </p>
+      <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h2 class="text-lg font-bold text-slate-900">База знаний и эталонные регламенты РУДН</h2>
+          <p class="text-sm text-slate-500 mt-1">
+            Нормативные сроки, правила приёма и чек-листы, по которым алгоритм автоматически сверяет точность ответов операторов.
+          </p>
+        </div>
+        <button onclick="openAddRuleModal()" class="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg shadow-sm flex items-center gap-1.5 transition">
+          <i class="fa-solid fa-plus"></i> Добавить правило
+        </button>
       </div>
 
-      <div id="actions-cards-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <!-- Заполняется динамически -->
-      </div>
+      <div id="rules-cards-container" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
 
     </section>
 
 
-    <!-- ==================== ВКЛАДКА 5: ТЕСТ-СТЕНД (LIVE LAB) ==================== -->
+    <!-- ==================== ВКЛАДКА 5: СИСТЕМНЫЕ МЕРЫ ==================== -->
+    <section id="tab-actions" class="hidden space-y-6">
+      
+      <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200">
+        <h2 class="text-lg font-bold text-slate-900">Реестр управленческих мер и решений</h2>
+        <p class="text-sm text-slate-500 mt-1">
+          Мероприятия по устранению корневых причин повторяющихся ошибок, пробелов в FAQ и проблем взаимодействия между подразделениями.
+        </p>
+      </div>
+
+      <div id="actions-cards-container" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+
+    </section>
+
+
+    <!-- ==================== ВКЛАДКА 6: ТЕСТ-СТЕНД ==================== -->
     <section id="tab-lab" class="hidden space-y-6">
       
       <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200">
         <h2 class="text-lg font-bold text-slate-900">Интерактивный тестовый стенд анализа звонков</h2>
         <p class="text-sm text-slate-500 mt-1">
-          Проверьте работу искусственного интеллекта на любом новом диалоге без наличия записей в архиве.
+          Мгновенная проверка любого диалога: алгоритм выполняет маскирование ПДн (152-ФЗ), классификацию и оценку по 6 критериям.
         </p>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
-        <!-- Форма ввода диалога -->
         <div class="lg:col-span-6 bg-white rounded-xl p-5 shadow-sm border border-slate-200 space-y-4">
-          <div class="flex justify-between items-center pb-2 border-b border-slate-100">
-            <span class="text-sm font-bold text-slate-800">Быстрые пресеты для тестирования:</span>
-          </div>
+          <div class="text-sm font-bold text-slate-800 pb-2 border-b border-slate-100">Калибровочные пресеты:</div>
 
           <div class="flex flex-wrap gap-2">
             <button onclick="loadLabPreset(1)" class="px-2.5 py-1.5 text-xs bg-red-50 text-red-700 rounded-lg border border-red-200 hover:bg-red-100 font-medium">
@@ -451,7 +480,6 @@
           </button>
         </div>
 
-        <!-- Результат анализа в реальном времени -->
         <div class="lg:col-span-6 bg-white rounded-xl p-5 shadow-sm border border-slate-200 space-y-4">
           <h3 class="font-bold text-slate-900 text-sm pb-2 border-b border-slate-100 flex items-center gap-2">
             <i class="fa-solid fa-microchip text-sky-600"></i> Результат распознавания и автоконтроля
@@ -474,9 +502,7 @@
               </div>
             </div>
 
-            <div id="lab-criteria-box" class="space-y-2">
-              <!-- Список критериев -->
-            </div>
+            <div id="lab-criteria-box" class="space-y-2"></div>
           </div>
         </div>
 
@@ -485,6 +511,109 @@
     </section>
 
   </main>
+
+  <!-- ==================== МОДАЛЬНОЕ ОКНО: ЗАГРУЗКА ЗВОНКА ==================== -->
+  <div id="modal-upload" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4 m-4">
+      <div class="flex justify-between items-center pb-3 border-b border-slate-100">
+        <h3 class="font-bold text-slate-900 text-base flex items-center gap-2">
+          <i class="fa-solid fa-cloud-arrow-up text-sky-600"></i> Загрузка нового звонка в систему
+        </h3>
+        <button onclick="closeUploadModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">ФИО / Псевдоним оператора:</label>
+          <input type="text" id="up-operator-name" value="Оператор №15 (Елена)" class="w-full p-2 border border-slate-300 rounded-lg">
+        </div>
+
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Вопрос заявителя (с реальными телефонами/СНИЛС для проверки 152-ФЗ):</label>
+          <textarea id="up-caller-text" rows="3" placeholder="Здравствуйте, мой СНИЛС 142-883-991 70, телефон +7 925 123-45-67..." class="w-full p-2 border border-slate-300 rounded-lg"></textarea>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Ответ оператора:</label>
+          <textarea id="up-operator-text" rows="3" placeholder="Добрый день! Проверяю ваше заявление..." class="w-full p-2 border border-slate-300 rounded-lg"></textarea>
+        </div>
+      </div>
+
+      <div class="p-3 bg-sky-50 rounded-lg border border-sky-200 text-[11px] text-sky-900 flex items-start gap-2">
+        <i class="fa-solid fa-shield-halved text-sky-600 mt-0.5"></i>
+        <span>Система автоматически замаскирует телефоны, паспорта и СНИЛС согласно 152-ФЗ перед анализом и сохранением в реестр.</span>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-2">
+        <button onclick="closeUploadModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold">Отмена</button>
+        <button onclick="submitCallUpload()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow">Импортировать и проанализировать</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ==================== МОДАЛЬНОЕ ОКНО: ИМПОРТ AVAYA CMS ==================== -->
+  <div id="modal-cms" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4 m-4">
+      <div class="flex justify-between items-center pb-3 border-b border-slate-100">
+        <h3 class="font-bold text-slate-900 text-base flex items-center gap-2">
+          <i class="fa-solid fa-file-csv text-emerald-600"></i> Импорт отчета Avaya CMS
+        </h3>
+        <button onclick="closeCmsModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <p class="text-slate-600">Загрузите выгрузку отчета Split/Skill Summary или VDN Report в формате CSV.</p>
+        
+        <div class="border-2 border-dashed border-slate-300 rounded-xl p-6 text-center hover:border-blue-500 transition cursor-pointer" onclick="document.getElementById('cms-file-input').click()">
+          <i class="fa-solid fa-file-arrow-up text-3xl text-slate-400 mb-2"></i>
+          <p class="font-semibold text-slate-700">Нажмите для выбора CSV файла</p>
+          <input type="file" id="cms-file-input" accept=".csv,.txt" class="hidden" onchange="uploadCmsFile(this.files[0])">
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-2">
+        <button onclick="closeCmsModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold">Закрыть</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ==================== МОДАЛЬНОЕ ОКНО: ДОБАВЛЕНИЕ ПРАВИЛА БАЗЫ ЗНАНИЙ ==================== -->
+  <div id="modal-rule" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4 m-4">
+      <div class="flex justify-between items-center pb-3 border-b border-slate-100">
+        <h3 class="font-bold text-slate-900 text-base flex items-center gap-2">
+          <i class="fa-solid fa-book-medical text-blue-600"></i> Добавить правило в базу знаний
+        </h3>
+        <button onclick="closeAddRuleModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">ID правила (латиницей, например RULE_CUSTOM_01):</label>
+          <input type="text" id="rule-id" class="w-full p-2 border border-slate-300 rounded-lg">
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Название / Тематика:</label>
+          <input type="text" id="rule-title" placeholder="Сроки подачи согласий..." class="w-full p-2 border border-slate-300 rounded-lg">
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Официальная нормативная формулировка РУДН:</label>
+          <textarea id="rule-exact" rows="3" placeholder="Прием оригиналов завершается строго до..." class="w-full p-2 border border-slate-300 rounded-lg"></textarea>
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Ключевые обязательные фразы (через запятую):</label>
+          <input type="text" id="rule-terms" placeholder="12:00, 5 августа, МСК..." class="w-full p-2 border border-slate-300 rounded-lg">
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-2">
+        <button onclick="closeAddRuleModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold">Отмена</button>
+        <button onclick="submitNewRule()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow">Сохранить правило</button>
+      </div>
+    </div>
+  </div>
 
   <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-500 mt-auto">
     Многофункциональный центр РУДН имени Патриса Лумумбы &copy; 2026. Интеллектуальная система контроля качества телефонного обслуживания.
@@ -497,20 +626,24 @@
     let isPlaying = false;
     let currentPlayTimeMs = 0;
 
-    // Инициализация при загрузке
     document.addEventListener("DOMContentLoaded", () => {
       loadOverview();
       loadCallsTable();
+      loadRules();
       loadActions();
     });
 
     function switchTab(tabName) {
-      ['overview', 'queue', 'card', 'actions', 'lab'].forEach(t => {
-        document.getElementById(`tab-${t}`).classList.add('hidden');
-        document.getElementById(`tab-btn-${t}`).classList.remove('bg-white/20', 'font-bold');
+      ['overview', 'queue', 'card', 'kb', 'actions', 'lab'].forEach(t => {
+        const el = document.getElementById(`tab-${t}`);
+        const btn = document.getElementById(`tab-btn-${t}`);
+        if (el) el.classList.add('hidden');
+        if (btn) btn.classList.remove('bg-white/20', 'font-bold');
       });
-      document.getElementById(`tab-${tabName}`).classList.remove('hidden');
-      document.getElementById(`tab-btn-${tabName}`).classList.add('bg-white/20', 'font-bold');
+      const activeEl = document.getElementById(`tab-${tabName}`);
+      const activeBtn = document.getElementById(`tab-btn-${tabName}`);
+      if (activeEl) activeEl.classList.remove('hidden');
+      if (activeBtn) activeBtn.classList.add('bg-white/20', 'font-bold');
     }
 
     async function loadOverview() {
@@ -523,7 +656,7 @@
         document.getElementById('kpi-fcr').innerText = `${data.metrics.fcr_percent}%`;
         document.getElementById('kpi-critical-count').innerText = data.metrics.critical_violations_count;
         document.getElementById('kpi-transfers').innerText = data.metrics.transfers_count;
-        document.getElementById('kpi-asa').innerText = `${data.metrics.cms_avg_speed_of_answer_sec} с`;
+        document.getElementById('kpi-match-rate').innerText = `${data.metrics.cms_match_rate_percent}%`;
 
         if (data.metrics.pending_review_count > 0) {
           const badge = document.getElementById('badge-pending-count');
@@ -531,7 +664,6 @@
           badge.classList.remove('hidden');
         }
 
-        // Рендер распределения тем
         const topicContainer = document.getElementById('topic-bars-container');
         topicContainer.innerHTML = '';
         const maxTopicCount = Math.max(...Object.values(data.topic_distribution), 1);
@@ -551,11 +683,9 @@
           `;
         }
 
-        // Рендер категорий заявителей
         const catContainer = document.getElementById('category-bars-container');
         catContainer.innerHTML = '';
         for (const [cat, count] of Object.entries(data.category_distribution)) {
-          const pct = Math.round((count / data.metrics.total_calls) * 100);
           catContainer.innerHTML += `
             <div class="flex items-center justify-between p-2 rounded-lg bg-slate-50 border border-slate-100 text-xs">
               <span class="font-medium text-slate-700">${cat}</span>
@@ -564,7 +694,6 @@
           `;
         }
 
-        // Рендер критических инцидентов
         const critList = document.getElementById('critical-calls-list');
         critList.innerHTML = '';
         data.recent_critical_calls.forEach(c => {
@@ -667,6 +796,9 @@
         document.getElementById('card-critical-badge').classList.toggle('hidden', !call.has_critical_error);
         document.getElementById('card-repeat-badge').classList.toggle('hidden', !call.metadata.is_repeat_call);
 
+        // Генерация визуальной звуковой волны
+        renderWaveformBars(call);
+
         // Транскрипт
         const uttsList = document.getElementById('card-utterances-list');
         uttsList.innerHTML = '';
@@ -675,18 +807,16 @@
           const bgBubble = isOp ? 'bg-sky-50 border-sky-100' : 'bg-slate-100 border-slate-200';
           const align = isOp ? 'mr-8' : 'ml-8';
           const badgeColor = isOp ? 'text-sky-700 font-semibold' : 'text-slate-700 font-semibold';
-          const keyEvidence = u.is_key_evidence ? 'border-2 border-red-400 bg-red-50/50' : '';
+          const keyEvidence = u.is_key_evidence ? 'border-2 border-red-400 bg-red-50/60 shadow-sm' : '';
 
           const startSec = Math.floor(u.start_ms / 1000);
           const timeStr = `${String(Math.floor(startSec / 60)).padStart(2, '0')}:${String(startSec % 60).padStart(2, '0')}`;
 
           uttsList.innerHTML += `
-            <div id="utt-${u.id}" class="p-3 rounded-xl border text-xs ${bgBubble} ${align} ${keyEvidence} transition">
+            <div id="utt-${u.id}" class="p-3 rounded-xl border text-xs ${bgBubble} ${align} ${keyEvidence} transition cursor-pointer hover:border-blue-400" onclick="seekToTime(${u.start_ms})">
               <div class="flex justify-between items-center mb-1">
-                <span class="${badgeColor}">${u.speaker}</span>
-                <button onclick="seekToTime(${u.start_ms})" class="font-mono text-[11px] text-slate-400 hover:text-blue-600 underline">
-                  ${timeStr}
-                </button>
+                <span class="${badgeColor}"><i class="${isOp ? 'fa-solid fa-headset' : 'fa-solid fa-user'}"></i> ${u.speaker}</span>
+                <span class="font-mono text-[11px] text-slate-400 font-semibold">${timeStr}</span>
               </div>
               <p class="text-slate-800 text-xs leading-relaxed">${u.text}</p>
             </div>
@@ -724,7 +854,7 @@
         if (foundEvidence) {
           evBox.classList.remove('hidden');
           document.getElementById('card-evidence-content').innerHTML = `
-            <div class="p-2 bg-white rounded border border-amber-300 font-mono text-[11px] text-red-700">
+            <div class="p-2 bg-white rounded border border-amber-300 font-mono text-[11px] text-red-700 font-medium">
               "${foundEvidence.quote}"
             </div>
             <p><strong>Пояснение:</strong> ${foundEvidence.explanation}</p>
@@ -734,6 +864,22 @@
           evBox.classList.add('hidden');
         }
 
+        // Связанный срез Avaya CMS
+        const cmsBox = document.getElementById('card-cms-box');
+        if (call.matched_cms) {
+          cmsBox.classList.remove('hidden');
+          document.getElementById('card-cms-content').innerHTML = `
+            <div class="grid grid-cols-3 gap-2 text-[11px]">
+              <div>Входящих в интервал: <strong>${call.matched_cms.offered_calls}</strong></div>
+              <div>Отказов в очереди: <strong>${call.matched_cms.abandoned_calls}</strong></div>
+              <div>Ср. ожидание ASA: <strong>${call.matched_cms.avg_speed_of_answer_sec} с</strong></div>
+            </div>
+          `;
+        } else {
+          cmsBox.classList.add('hidden');
+        }
+
+        document.getElementById('card-override-score').value = call.overall_quality_score;
         document.getElementById('card-manager-notes').value = call.manager_notes || '';
         resetPlayer(call.metadata.duration_seconds);
 
@@ -742,35 +888,82 @@
       }
     }
 
-    async function updateManagerStatus(status) {
+    function renderWaveformBars(call) {
+      const box = document.getElementById('waveform-canvas-box');
+      box.innerHTML = '';
+      const totalBars = 60;
+      for (let i = 0; i < totalBars; i++) {
+        const heightPct = Math.floor(Math.sin(i * 0.4) * 35 + 50 + (i % 5) * 8);
+        const isErrorMoment = call.has_critical_error && i > 25 && i < 40;
+        const barColor = isErrorMoment ? 'bg-red-500' : 'bg-sky-400';
+        box.innerHTML += `<div class="waveform-bar w-1 ${barColor} rounded-full" style="height: ${heightPct}%"></div>`;
+      }
+    }
+
+    function clickWaveform(e) {
       if (!currentCallData) return;
+      const rect = e.currentTarget.getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      const pct = clickX / rect.width;
+      const targetSec = Math.floor(pct * currentCallData.metadata.duration_seconds);
+      seekToTime(targetSec * 1000);
+    }
+
+    async function submitManagerReview(status) {
+      if (!currentCallData) return;
+      const overrideScore = parseFloat(document.getElementById('card-override-score').value);
       const notes = document.getElementById('card-manager-notes').value;
       try {
-        await fetch(`/api/calls/${currentCallData.metadata.call_id}/status`, {
+        await fetch(`/api/calls/${currentCallData.metadata.call_id}/review`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ manager_status: status, manager_notes: notes })
+          body: JSON.stringify({ manager_status: status, score_override: overrideScore, manager_notes: notes })
         });
-        alert(`Статус звонка обновлен: ${status}`);
+        alert(`Вердикт руководителя сохранен: ${status}`);
         loadOverview();
         loadCallsTable();
       } catch (err) {
-        alert('Ошибка при сохранении статуса');
+        alert('Ошибка при сохранении вердикта');
       }
     }
 
     async function saveNotesOnly() {
       if (!currentCallData) return;
-      const notes = document.getElementById('card-manager-notes').value;
+      submitManagerReview(currentCallData.manager_status);
+    }
+
+    async function loadRules() {
       try {
-        await fetch(`/api/calls/${currentCallData.metadata.call_id}/status`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ manager_status: currentCallData.manager_status, manager_notes: notes })
+        const res = await fetch('/api/rules');
+        const rules = await res.json();
+        const container = document.getElementById('rules-cards-container');
+        container.innerHTML = '';
+
+        rules.forEach(r => {
+          container.innerHTML += `
+            <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200 flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-xs font-mono font-bold text-sky-600">${r.rule_id}</span>
+                  <span class="text-xs bg-slate-100 text-slate-700 px-2 py-0.5 rounded font-semibold">${r.category}</span>
+                </div>
+                <h3 class="font-bold text-slate-900 text-sm mb-1">${r.title}</h3>
+                <p class="text-xs text-slate-700 italic bg-slate-50 p-2.5 rounded-lg border border-slate-200 leading-relaxed mb-2">
+                  "${r.exact_rule_text}"
+                </p>
+                <div class="text-[11px] text-slate-500"><strong>Источник:</strong> ${r.source_document} (ред. ${r.version})</div>
+                <div class="mt-2 flex flex-wrap gap-1">
+                  ${(r.critical_terms || []).map(t => `<span class="bg-blue-50 text-blue-700 text-[10px] px-1.5 py-0.2 rounded border border-blue-200">${t}</span>`).join('')}
+                </div>
+              </div>
+              <div class="mt-4 pt-3 border-t border-slate-100 flex justify-between items-center text-xs text-slate-500">
+                <span>Подразделение: <strong>${r.target_department}</strong></span>
+              </div>
+            </div>
+          `;
         });
-        alert('Заметка сохранена');
       } catch (err) {
-        alert('Ошибка при сохранении');
+        console.error('Ошибка загрузки правил:', err);
       }
     }
 
@@ -805,6 +998,89 @@
         });
       } catch (err) {
         console.error('Ошибка загрузки мер:', err);
+      }
+    }
+
+    // Модальные окна
+    function openUploadModal() { document.getElementById('modal-upload').classList.remove('hidden'); }
+    function closeUploadModal() { document.getElementById('modal-upload').classList.add('hidden'); }
+    function openCmsModal() { document.getElementById('modal-cms').classList.remove('hidden'); }
+    function closeCmsModal() { document.getElementById('modal-cms').classList.add('hidden'); }
+    function openAddRuleModal() { document.getElementById('modal-rule').classList.remove('hidden'); }
+    function closeAddRuleModal() { document.getElementById('modal-rule').classList.add('hidden'); }
+
+    async function submitCallUpload() {
+      const opName = document.getElementById('up-operator-name').value;
+      const callerText = document.getElementById('up-caller-text').value;
+      const opText = document.getElementById('up-operator-text').value;
+
+      if (!callerText || !opText) {
+        alert('Заполните обе реплики диалога');
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('caller_text', callerText);
+      formData.append('operator_text', opText);
+      formData.append('operator_name', opName);
+
+      try {
+        const res = await fetch('/api/calls/upload', { method: 'POST', body: formData });
+        const data = await res.json();
+        closeUploadModal();
+        alert(`Звонок успешно импортирован!\nЗамаскировано ПДн: телефонов: ${data.anonymization_stats.phones_masked}, СНИЛС: ${data.anonymization_stats.snils_masked}`);
+        loadOverview();
+        loadCallsTable();
+        openCallCard(data.call.metadata.call_id);
+      } catch (err) {
+        alert('Ошибка при импорте звонка');
+      }
+    }
+
+    async function uploadCmsFile(file) {
+      if (!file) return;
+      const formData = new FormData();
+      formData.append('file', file);
+      try {
+        const res = await fetch('/api/cms/upload', { method: 'POST', body: formData });
+        const data = await res.json();
+        closeCmsModal();
+        alert(`Отчет Avaya CMS загружен! Импортировано ${data.intervals_imported} интервалов.`);
+        loadOverview();
+      } catch (err) {
+        alert('Ошибка загрузки отчета CMS');
+      }
+    }
+
+    async function submitNewRule() {
+      const ruleId = document.getElementById('rule-id').value;
+      const title = document.getElementById('rule-title').value;
+      const exactText = document.getElementById('rule-exact').value;
+      const terms = document.getElementById('rule-terms').value.split(',').map(s => s.trim()).filter(Boolean);
+
+      if (!ruleId || !title || !exactText) {
+        alert('Заполните обязательные поля');
+        return;
+      }
+
+      try {
+        await fetch('/api/rules', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            rule_id: ruleId,
+            category: 'Сроки и регламенты',
+            title: title,
+            exact_rule_text: exactText,
+            source_document: 'Приказ ректора РУДН',
+            critical_terms: terms
+          })
+        });
+        closeAddRuleModal();
+        alert('Новое правило добавлено в базу знаний!');
+        loadRules();
+      } catch (err) {
+        alert('Ошибка добавления правила');
       }
     }
 
@@ -880,7 +1156,6 @@
       document.getElementById('player-time-display').innerText = `${cM}:${cS} / ${tM}:${tS}`;
     }
 
-    // Тест-стенд
     function loadLabPreset(num) {
       if (num === 1) {
         document.getElementById('lab-caller-text').value = "Здравствуйте! До какого времени завтра 5 августа нужно сдать согласие на бюджет бакалавриата?";

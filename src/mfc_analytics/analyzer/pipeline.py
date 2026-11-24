@@ -4,13 +4,16 @@ from datetime import datetime
 from typing import Dict, List, Optional, Tuple
 
 from mfc_analytics.analyzer.classifier import CallClassifier
+from mfc_analytics.analyzer.llm_evaluator import SemanticQualityEvaluator
 from mfc_analytics.analyzer.quality_checker import QualityChecker
 from mfc_analytics.analyzer.systemic_issues import SystemicIssueDetector
+from mfc_analytics.data.seed_rules import REFERENCE_RULES
 from mfc_analytics.models.call import (
     Call,
     CallMetadata,
     CallOutcome,
     CallTopic,
+    CriterionStatus,
     Utterance,
 )
 
@@ -21,7 +24,9 @@ class MFCAnalyticsPipeline:
     def __init__(self):
         self.classifier = CallClassifier()
         self.quality_checker = QualityChecker()
+        self.semantic_evaluator = SemanticQualityEvaluator()
         self.systemic_detector = SystemicIssueDetector()
+        self.rules = REFERENCE_RULES
 
     def analyze_call(self, call: Call) -> Call:
         """Выполняет полный цикл обработки одного звонка: классификацию и оценку качества."""
@@ -46,6 +51,20 @@ class MFCAnalyticsPipeline:
             outcome=call.outcome,
             call_time=call.metadata.timestamp,
         )
+
+        # 3. Глубокий семантический анализ (скрытая агрессия, нюансы регламентов)
+        nuance_evidences = self.semantic_evaluator.evaluate_dialogue_nuances(
+            utterances=call.utterances,
+            rules=self.rules,
+        )
+        if nuance_evidences:
+            for ev in nuance_evidences:
+                target_crit = next((e for e in evaluations if e.criterion_id == ev.criterion_id), None)
+                if target_crit:
+                    target_crit.status = CriterionStatus.VIOLATED
+                    target_crit.score = min(target_crit.score, 0.4)
+                    target_crit.evidences.append(ev)
+                    score = min(score, 60.0)
 
         call.criteria_evaluations = evaluations
         call.overall_quality_score = score
