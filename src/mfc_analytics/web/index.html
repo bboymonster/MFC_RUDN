@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>МФЦ РУДН — Интеллектуальная аналитика звонков</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
+    .rudn-blue { background-color: #003366; }
+    .rudn-accent { color: #0066cc; }
+    .bg-rudn-light { background-color: #f4f7fa; }
+    .waveform-bar { transition: height 0.2s ease; }
+    .tab-active { border-bottom: 3px solid #0066cc; color: #003366; font-weight: 600; }
+  </style>
+</head>
+<body class="bg-rudn-light text-slate-800 flex flex-col min-h-screen">
+
+  <!-- Шапка системы -->
+  <header class="rudn-blue text-white shadow-md sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center font-bold text-xl text-white border border-white/20">
+          <i class="fa-solid fa-headset text-sky-300"></i>
+        </div>
+        <div>
+          <div class="flex items-center space-x-2">
+            <span class="font-bold text-lg tracking-wide">РУДН</span>
+            <span class="text-xs bg-sky-500/30 text-sky-200 px-2 py-0.5 rounded-full font-semibold border border-sky-400/30">МФЦ Контакт-центр</span>
+          </div>
+          <p class="text-xs text-slate-300">Интеллектуальная аналитика звонков и контроль качества консультаций</p>
+        </div>
+      </div>
+
+      <!-- Переключатель вкладок -->
+      <nav class="hidden md:flex space-x-1">
+        <button onclick="switchTab('overview')" id="tab-btn-overview" class="px-4 py-2 text-sm rounded-md hover:bg-white/10 transition flex items-center space-x-2">
+          <i class="fa-solid fa-chart-pie"></i><span>Обзор</span>
+        </button>
+        <button onclick="switchTab('queue')" id="tab-btn-queue" class="px-4 py-2 text-sm rounded-md hover:bg-white/10 transition flex items-center space-x-2">
+          <i class="fa-solid fa-list-check"></i><span>Очередь проверки</span>
+          <span id="badge-pending-count" class="bg-red-500 text-white text-xs px-1.5 py-0.2 rounded-full hidden">0</span>
+        </button>
+        <button onclick="switchTab('card')" id="tab-btn-card" class="px-4 py-2 text-sm rounded-md hover:bg-white/10 transition flex items-center space-x-2">
+          <i class="fa-solid fa-file-waveform"></i><span>Карточка звонка</span>
+        </button>
+        <button onclick="switchTab('actions')" id="tab-btn-actions" class="px-4 py-2 text-sm rounded-md hover:bg-white/10 transition flex items-center space-x-2">
+          <i class="fa-solid fa-bullseye"></i><span>Системные меры</span>
+        </button>
+        <button onclick="switchTab('lab')" id="tab-btn-lab" class="px-4 py-2 text-sm rounded-md hover:bg-white/10 transition flex items-center space-x-2">
+          <i class="fa-solid fa-flask"></i><span>Тест-стенд</span>
+        </button>
+      </nav>
+
+      <div class="flex items-center space-x-3 text-xs text-slate-300">
+        <span class="inline-flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>База знаний: Лето 2026</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Основной контент -->
+  <main class="flex-grow max-w-7xl mx-auto w-full px-4 py-6">
+
+    <!-- ==================== ВКЛАДКА 1: ОБЗОР ==================== -->
+    <section id="tab-overview" class="space-y-6">
+      
+      <!-- Приветствие и баннер контекста -->
+      <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h1 class="text-xl font-bold text-slate-900">Панель управления руководителя контакт-центра</h1>
+          <p class="text-sm text-slate-500 mt-1">
+            Пакетный анализ телефонных обращений приёмной кампании 2026 года со связкой с интервалами Avaya CMS.
+          </p>
+        </div>
+        <div class="flex flex-wrap gap-2 text-xs">
+          <span class="px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 font-medium border border-blue-200 flex items-center gap-1.5">
+            <i class="fa-regular fa-calendar"></i> Период: 20 июня — 28 августа 2026
+          </span>
+          <span class="px-3 py-1.5 rounded-lg bg-amber-50 text-amber-700 font-medium border border-amber-200 flex items-center gap-1.5">
+            <i class="fa-solid fa-triangle-exclamation"></i> Пиковые дни согласий и оплат
+          </span>
+        </div>
+      </div>
+
+      <!-- KPI Метрики -->
+      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        
+        <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-200">
+          <div class="text-xs font-medium text-slate-500 uppercase tracking-wider">Всего звонков</div>
+          <div id="kpi-total-calls" class="text-2xl font-bold text-slate-900 mt-1">--</div>
+          <div class="text-xs text-slate-500 mt-1 flex items-center gap-1">
+            <i class="fa-solid fa-database text-sky-600"></i> в реестре аудио
+          </div>
+        </div>
+
+        <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-200">
+          <div class="text-xs font-medium text-slate-500 uppercase tracking-wider">Индекс качества</div>
+          <div id="kpi-avg-score" class="text-2xl font-bold text-emerald-600 mt-1">--%</div>
+          <div class="text-xs text-slate-500 mt-1 flex items-center gap-1">
+            <i class="fa-solid fa-shield-halved text-emerald-600"></i> по 6 критериям
+          </div>
+        </div>
+
+        <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-200">
+          <div class="text-xs font-medium text-slate-500 uppercase tracking-wider">FCR (1-й контакт)</div>
+          <div id="kpi-fcr" class="text-2xl font-bold text-blue-600 mt-1">--%</div>
+          <div class="text-xs text-slate-500 mt-1 flex items-center gap-1">
+            <i class="fa-solid fa-circle-check text-blue-600"></i> без повторов
+          </div>
+        </div>
+
+        <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-200">
+          <div class="text-xs font-medium text-slate-500 uppercase tracking-wider">Крит. ошибки</div>
+          <div id="kpi-critical-count" class="text-2xl font-bold text-red-600 mt-1">--</div>
+          <div class="text-xs text-red-500 mt-1 font-medium flex items-center gap-1">
+            <i class="fa-solid fa-circle-exclamation"></i> требуют разбора
+          </div>
+        </div>
+
+        <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-200">
+          <div class="text-xs font-medium text-slate-500 uppercase tracking-wider">Переводы (VDN)</div>
+          <div id="kpi-transfers" class="text-2xl font-bold text-amber-600 mt-1">--</div>
+          <div class="text-xs text-slate-500 mt-1 flex items-center gap-1">
+            <i class="fa-solid fa-shuffle text-amber-600"></i> ПК / Бухгалтерия
+          </div>
+        </div>
+
+        <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-200">
+          <div class="text-xs font-medium text-slate-500 uppercase tracking-wider">Ср. ожидание ASA</div>
+          <div id="kpi-asa" class="text-2xl font-bold text-slate-800 mt-1">-- с</div>
+          <div class="text-xs text-slate-500 mt-1 flex items-center gap-1">
+            <i class="fa-solid fa-clock text-slate-500"></i> Avaya CMS
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Графики и распределение тем -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- Распределение тем -->
+        <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200 lg:col-span-2">
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="font-bold text-slate-900 text-base flex items-center gap-2">
+              <i class="fa-solid fa-layer-group text-sky-600"></i> Структура обращений по тематикам
+            </h2>
+            <span class="text-xs text-slate-400">Автоклассификация речи</span>
+          </div>
+          <div id="topic-bars-container" class="space-y-3">
+            <!-- Заполняется динамически -->
+          </div>
+        </div>
+
+        <!-- Категории заявителей -->
+        <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200">
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="font-bold text-slate-900 text-base flex items-center gap-2">
+              <i class="fa-solid fa-users text-sky-600"></i> Сегменты заявителей
+            </h2>
+          </div>
+          <div id="category-bars-container" class="space-y-3">
+            <!-- Заполняется динамически -->
+          </div>
+          <div class="mt-6 pt-4 border-t border-slate-100 text-xs text-slate-500">
+            <p><i class="fa-solid fa-info-circle text-sky-500"></i> Псевдонимизация выполнена в соответствии с 152-ФЗ. Голосовые биометрические данные не сохраняются.</p>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Срочные инциденты -->
+      <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="font-bold text-slate-900 text-base flex items-center gap-2">
+            <i class="fa-solid fa-triangle-exclamation text-red-500"></i> Звонки с подтверждёнными критическими ошибками
+          </h2>
+          <button onclick="switchTab('queue'); filterCriticalOnly();" class="text-xs text-blue-600 hover:underline font-medium">
+            Все проблемные звонки &rarr;
+          </button>
+        </div>
+        <div id="critical-calls-list" class="space-y-3">
+          <!-- Заполняется динамически -->
+        </div>
+      </div>
+
+    </section>
+
+
+    <!-- ==================== ВКЛАДКА 2: ОЧЕРЕДЬ ПРОВЕРКИ ==================== -->
+    <section id="tab-queue" class="hidden space-y-4">
+      
+      <!-- Фильтры -->
+      <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-200 flex flex-wrap gap-3 items-center justify-between">
+        <div class="flex flex-wrap gap-2 items-center flex-grow">
+          <div class="relative min-w-[240px]">
+            <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-sm"></i>
+            <input type="text" id="filter-search" oninput="loadCallsTable()" placeholder="Поиск по ID, реплике, заявителю..." 
+                   class="w-full pl-9 pr-3 py-1.5 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+
+          <select id="filter-topic" onchange="loadCallsTable()" class="py-1.5 px-3 text-sm rounded-lg border border-slate-300 bg-white">
+            <option value="">Все тематики</option>
+            <option value="Конкурсные списки, согласие и зачисление">Конкурс и зачисление</option>
+            <option value="Договор и оплата обучения">Договор и оплата</option>
+            <option value="Подача документов и статус заявления">Подача и статус</option>
+            <option value="Международные вопросы (визы, признание документов)">Международные вопросы</option>
+            <option value="Общежитие и первые шаги">Общежитие</option>
+            <option value="Вступительные испытания (ДВИ, экзамены)">ДВИ / Экзамены</option>
+          </select>
+
+          <select id="filter-status" onchange="loadCallsTable()" class="py-1.5 px-3 text-sm rounded-lg border border-slate-300 bg-white">
+            <option value="">Все статусы проверки</option>
+            <option value="Требует проверки">Требует проверки</option>
+            <option value="Нарушение подтверждено">Нарушение подтверждено</option>
+            <option value="Проверено, без замечаний">Проверено, без замечаний</option>
+          </select>
+
+          <label class="inline-flex items-center gap-2 cursor-pointer text-sm font-medium text-slate-700 ml-2">
+            <input type="checkbox" id="filter-critical-checkbox" onchange="loadCallsTable()" class="w-4 h-4 text-red-600 rounded border-slate-300">
+            <span class="text-red-700 bg-red-50 px-2 py-0.5 rounded border border-red-200">Только с ошибками</span>
+          </label>
+        </div>
+
+        <button onclick="resetFilters()" class="text-xs text-slate-500 hover:text-slate-800 underline">
+          Сбросить фильтры
+        </button>
+      </div>
+
+      <!-- Таблица звонков -->
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm text-slate-600">
+            <thead class="bg-slate-50 text-slate-700 uppercase text-xs font-semibold border-b border-slate-200">
+              <tr>
+                <th class="px-4 py-3">ID звонка</th>
+                <th class="px-4 py-3">Время (МСК)</th>
+                <th class="px-4 py-3">Тематика</th>
+                <th class="px-4 py-3">Заявитель</th>
+                <th class="px-4 py-3">Итог</th>
+                <th class="px-4 py-3 text-center">Качество</th>
+                <th class="px-4 py-3">Статус проверки</th>
+                <th class="px-4 py-3 text-right">Действие</th>
+              </tr>
+            </thead>
+            <tbody id="calls-table-body" class="divide-y divide-slate-100">
+              <!-- Заполняется динамически -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </section>
+
+
+    <!-- ==================== ВКЛАДКА 3: КАРТОЧКА ЗВОНКА ==================== -->
+    <section id="tab-card" class="hidden space-y-6">
+      
+      <div id="card-placeholder" class="bg-white rounded-xl p-12 text-center text-slate-400 border border-dashed border-slate-300">
+        <i class="fa-solid fa-arrow-pointer text-4xl mb-3 text-slate-300"></i>
+        <p class="text-base font-medium">Выберите звонок в очереди проверки для просмотра полной карточки</p>
+        <button onclick="switchTab('queue')" class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700">
+          Перейти в очередь звонков
+        </button>
+      </div>
+
+      <div id="card-content" class="hidden space-y-6">
+        
+        <!-- Заголовок карточки -->
+        <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
+            <div class="flex items-center space-x-3">
+              <span id="card-call-id" class="text-xl font-bold text-slate-900 font-mono">CALL-2026-XXXX</span>
+              <span id="card-score-badge" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">100%</span>
+              <span id="card-critical-badge" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-800 hidden">КРИТИЧЕСКАЯ ОШИБКА</span>
+              <span id="card-repeat-badge" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 hidden">ПОВТОРНЫЙ ЗВОНОК</span>
+            </div>
+            <div class="text-xs text-slate-500 mt-1 flex flex-wrap gap-4">
+              <span><i class="fa-regular fa-clock"></i> <span id="card-timestamp">--</span></span>
+              <span><i class="fa-solid fa-stopwatch"></i> Длительность: <span id="card-duration">--</span> с</span>
+              <span><i class="fa-solid fa-headset"></i> <span id="card-operator">--</span></span>
+              <span><i class="fa-solid fa-user"></i> <span id="card-applicant">--</span></span>
+              <span><i class="fa-solid fa-gauge-high"></i> <span id="card-load">--</span></span>
+            </div>
+          </div>
+
+          <!-- Кнопки решения руководителя -->
+          <div class="flex items-center space-x-2">
+            <button onclick="updateManagerStatus('Нарушение подтверждено')" class="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-lg shadow-sm flex items-center gap-1.5">
+              <i class="fa-solid fa-circle-check"></i> Подтвердить нарушение
+            </button>
+            <button onclick="updateManagerStatus('Ложный сигнал (отклонено)')" class="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold rounded-lg flex items-center gap-1.5">
+              <i class="fa-solid fa-xmark"></i> Отклонить
+            </button>
+            <button onclick="updateManagerStatus('Проверено, без замечаний')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg flex items-center gap-1.5">
+              <i class="fa-solid fa-check"></i> Согласовать
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          
+          <!-- Левая колонка: Аудиоплеер и Транскрипт (7 колонок) -->
+          <div class="lg:col-span-7 space-y-4">
+            
+            <!-- Плеер аудиозаписи (симуляция потока Avaya) -->
+            <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-200">
+              <div class="flex items-center justify-between mb-3 text-xs text-slate-500 font-medium">
+                <span class="flex items-center gap-1"><i class="fa-solid fa-headphones text-sky-600"></i> Аудиозапись Avaya (стерео)</span>
+                <span id="player-time-display">00:00 / 00:00</span>
+              </div>
+              
+              <div class="flex items-center space-x-4">
+                <button id="player-play-btn" onclick="togglePlayAudio()" class="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center hover:bg-blue-700 shadow transition">
+                  <i id="player-play-icon" class="fa-solid fa-play"></i>
+                </button>
+
+                <!-- Интерактивная шкала времени -->
+                <div class="flex-grow">
+                  <input type="range" id="player-scrubber" min="0" max="100" value="0" oninput="scrubAudio(this.value)" class="w-full accent-blue-600 cursor-pointer h-2 bg-slate-200 rounded-lg">
+                </div>
+
+                <div class="text-xs text-slate-500">
+                  <span class="px-2 py-1 bg-slate-100 rounded text-slate-600 font-mono font-semibold">1.0x</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Транскрипт диалога -->
+            <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200">
+              <div class="flex justify-between items-center mb-4 pb-2 border-b border-slate-100">
+                <h3 class="font-bold text-slate-900 text-sm flex items-center gap-2">
+                  <i class="fa-solid fa-comments text-sky-600"></i> Стенограмма звонка с таймкодами
+                </h3>
+                <span class="text-xs text-slate-400">Нажмите на время реплики для перехода</span>
+              </div>
+              
+              <div id="card-utterances-list" class="space-y-3 max-h-[500px] overflow-y-auto pr-2">
+                <!-- Заполняется динамически -->
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Правая колонка: 6 критериев и эталонные правила (5 колонок) -->
+          <div class="lg:col-span-5 space-y-4">
+            
+            <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200">
+              <h3 class="font-bold text-slate-900 text-sm flex items-center gap-2 mb-4 pb-2 border-b border-slate-100">
+                <i class="fa-solid fa-scale-balanced text-sky-600"></i> Оценка по 6 критериям качества
+              </h3>
+              
+              <div id="card-criteria-list" class="space-y-3">
+                <!-- Заполняется динамически -->
+              </div>
+            </div>
+
+            <!-- Доказательная база и эталон РУДН -->
+            <div id="card-evidence-box" class="bg-amber-50 rounded-xl p-4 border border-amber-200 hidden">
+              <div class="flex items-center gap-2 text-amber-900 font-bold text-xs uppercase mb-2">
+                <i class="fa-solid fa-gavel text-amber-600"></i> Доказательство нарушения и эталон
+              </div>
+              <div id="card-evidence-content" class="text-xs text-amber-950 space-y-2">
+                <!-- Заполняется динамически -->
+              </div>
+            </div>
+
+            <!-- Заметки руководителя -->
+            <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-200">
+              <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
+                Решение руководителя / Комментарий
+              </label>
+              <textarea id="card-manager-notes" rows="3" placeholder="Введите поручение или обоснование решения..." 
+                        class="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+              <div class="mt-2 flex justify-end">
+                <button onclick="saveNotesOnly()" class="px-3 py-1 bg-slate-800 hover:bg-slate-900 text-white text-xs font-medium rounded-lg">
+                  Сохранить заметку
+                </button>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- ==================== ВКЛАДКА 4: СИСТЕМНЫЕ МЕРЫ ==================== -->
+    <section id="tab-actions" class="hidden space-y-6">
+      
+      <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200">
+        <h2 class="text-lg font-bold text-slate-900">Выявленные системные проблемы и управленческие меры</h2>
+        <p class="text-sm text-slate-500 mt-1">
+          Автоматически сформированный реестр действий на основе кластеризации повторяющихся ошибок, пробелов в FAQ и узких мест маршрутизации.
+        </p>
+      </div>
+
+      <div id="actions-cards-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Заполняется динамически -->
+      </div>
+
+    </section>
+
+
+    <!-- ==================== ВКЛАДКА 5: ТЕСТ-СТЕНД (LIVE LAB) ==================== -->
+    <section id="tab-lab" class="hidden space-y-6">
+      
+      <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200">
+        <h2 class="text-lg font-bold text-slate-900">Интерактивный тестовый стенд анализа звонков</h2>
+        <p class="text-sm text-slate-500 mt-1">
+          Проверьте работу искусственного интеллекта на любом новом диалоге без наличия записей в архиве.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Форма ввода диалога -->
+        <div class="lg:col-span-6 bg-white rounded-xl p-5 shadow-sm border border-slate-200 space-y-4">
+          <div class="flex justify-between items-center pb-2 border-b border-slate-100">
+            <span class="text-sm font-bold text-slate-800">Быстрые пресеты для тестирования:</span>
+          </div>
+
+          <div class="flex flex-wrap gap-2">
+            <button onclick="loadLabPreset(1)" class="px-2.5 py-1.5 text-xs bg-red-50 text-red-700 rounded-lg border border-red-200 hover:bg-red-100 font-medium">
+              1. Ошибка в сроке согласия (до 18:00)
+            </button>
+            <button onclick="loadLabPreset(2)" class="px-2.5 py-1.5 text-xs bg-amber-50 text-amber-700 rounded-lg border border-amber-200 hover:bg-amber-100 font-medium">
+              2. Иностранец на Госуслугах
+            </button>
+            <button onclick="loadLabPreset(3)" class="px-2.5 py-1.5 text-xs bg-emerald-50 text-emerald-700 rounded-lg border border-emerald-200 hover:bg-emerald-100 font-medium">
+              3. Идеальный звонок по общежитию
+            </button>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Реплика заявителя (вопрос/затруднение):</label>
+            <textarea id="lab-caller-text" rows="3" class="w-full text-sm p-3 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Реплика оператора (консультация):</label>
+            <textarea id="lab-operator-text" rows="3" class="w-full text-sm p-3 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+          </div>
+
+          <button onclick="runLiveAnalysis()" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold text-sm shadow transition flex items-center justify-center gap-2">
+            <i class="fa-solid fa-wand-magic-sparkles"></i> Запустить анализ алгоритмом МФЦ
+          </button>
+        </div>
+
+        <!-- Результат анализа в реальном времени -->
+        <div class="lg:col-span-6 bg-white rounded-xl p-5 shadow-sm border border-slate-200 space-y-4">
+          <h3 class="font-bold text-slate-900 text-sm pb-2 border-b border-slate-100 flex items-center gap-2">
+            <i class="fa-solid fa-microchip text-sky-600"></i> Результат распознавания и автоконтроля
+          </h3>
+
+          <div id="lab-result-placeholder" class="py-12 text-center text-slate-400">
+            <i class="fa-solid fa-sliders text-3xl mb-2 text-slate-300"></i>
+            <p class="text-xs">Запустите анализ, чтобы увидеть оценку и найденные доказательства</p>
+          </div>
+
+          <div id="lab-result-content" class="hidden space-y-4">
+            <div class="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-200">
+              <div>
+                <span class="text-xs text-slate-500 block">Определенная тематика:</span>
+                <span id="lab-topic" class="font-bold text-sm text-slate-800">--</span>
+              </div>
+              <div class="text-right">
+                <span class="text-xs text-slate-500 block">Итоговый балл:</span>
+                <span id="lab-score" class="font-bold text-lg text-emerald-600">--%</span>
+              </div>
+            </div>
+
+            <div id="lab-criteria-box" class="space-y-2">
+              <!-- Список критериев -->
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+  <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-500 mt-auto">
+    Многофункциональный центр РУДН имени Патриса Лумумбы &copy; 2026. Интеллектуальная система контроля качества телефонного обслуживания.
+  </footer>
+
+  <!-- Клиентский скрипт -->
+  <script>
+    let currentCallData = null;
+    let audioInterval = null;
+    let isPlaying = false;
+    let currentPlayTimeMs = 0;
+
+    // Инициализация при загрузке
+    document.addEventListener("DOMContentLoaded", () => {
+      loadOverview();
+      loadCallsTable();
+      loadActions();
+    });
+
+    function switchTab(tabName) {
+      ['overview', 'queue', 'card', 'actions', 'lab'].forEach(t => {
+        document.getElementById(`tab-${t}`).classList.add('hidden');
+        document.getElementById(`tab-btn-${t}`).classList.remove('bg-white/20', 'font-bold');
+      });
+      document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+      document.getElementById(`tab-btn-${tabName}`).classList.add('bg-white/20', 'font-bold');
+    }
+
+    async function loadOverview() {
+      try {
+        const res = await fetch('/api/overview');
+        const data = await res.json();
+        
+        document.getElementById('kpi-total-calls').innerText = data.metrics.total_calls;
+        document.getElementById('kpi-avg-score').innerText = `${data.metrics.average_quality_score}%`;
+        document.getElementById('kpi-fcr').innerText = `${data.metrics.fcr_percent}%`;
+        document.getElementById('kpi-critical-count').innerText = data.metrics.critical_violations_count;
+        document.getElementById('kpi-transfers').innerText = data.metrics.transfers_count;
+        document.getElementById('kpi-asa').innerText = `${data.metrics.cms_avg_speed_of_answer_sec} с`;
+
+        if (data.metrics.pending_review_count > 0) {
+          const badge = document.getElementById('badge-pending-count');
+          badge.innerText = data.metrics.pending_review_count;
+          badge.classList.remove('hidden');
+        }
+
+        // Рендер распределения тем
+        const topicContainer = document.getElementById('topic-bars-container');
+        topicContainer.innerHTML = '';
+        const maxTopicCount = Math.max(...Object.values(data.topic_distribution), 1);
+        
+        for (const [topic, count] of Object.entries(data.topic_distribution)) {
+          const pct = Math.round((count / maxTopicCount) * 100);
+          topicContainer.innerHTML += `
+            <div>
+              <div class="flex justify-between text-xs font-medium text-slate-700 mb-1">
+                <span>${topic}</span>
+                <span class="text-slate-500">${count} (${Math.round(count / data.metrics.total_calls * 100)}%)</span>
+              </div>
+              <div class="w-full bg-slate-100 rounded-full h-2">
+                <div class="bg-blue-600 h-2 rounded-full" style="width: ${pct}%"></div>
+              </div>
+            </div>
+          `;
+        }
+
+        // Рендер категорий заявителей
+        const catContainer = document.getElementById('category-bars-container');
+        catContainer.innerHTML = '';
+        for (const [cat, count] of Object.entries(data.category_distribution)) {
+          const pct = Math.round((count / data.metrics.total_calls) * 100);
+          catContainer.innerHTML += `
+            <div class="flex items-center justify-between p-2 rounded-lg bg-slate-50 border border-slate-100 text-xs">
+              <span class="font-medium text-slate-700">${cat}</span>
+              <span class="font-bold text-slate-900 bg-white px-2 py-0.5 rounded shadow-sm border border-slate-200">${count}</span>
+            </div>
+          `;
+        }
+
+        // Рендер критических инцидентов
+        const critList = document.getElementById('critical-calls-list');
+        critList.innerHTML = '';
+        data.recent_critical_calls.forEach(c => {
+          critList.innerHTML += `
+            <div class="p-3 bg-red-50/60 border border-red-200 rounded-xl flex items-center justify-between">
+              <div>
+                <div class="flex items-center gap-2">
+                  <span class="font-mono font-bold text-xs text-red-900">${c.call_id}</span>
+                  <span class="text-xs bg-red-100 text-red-800 font-semibold px-2 py-0.5 rounded">${c.topic}</span>
+                  <span class="text-xs text-slate-500">${new Date(c.timestamp).toLocaleString('ru-RU')}</span>
+                </div>
+                <p class="text-xs text-red-800 mt-1 font-medium">${c.summary || 'Зафиксировано расхождение с эталонным регламентом'}</p>
+              </div>
+              <button onclick="openCallCard('${c.call_id}')" class="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-lg shadow-sm">
+                Разобрать &rarr;
+              </button>
+            </div>
+          `;
+        });
+
+      } catch (err) {
+        console.error('Ошибка загрузки обзора:', err);
+      }
+    }
+
+    async function loadCallsTable() {
+      const topic = document.getElementById('filter-topic').value;
+      const status = document.getElementById('filter-status').value;
+      const search = document.getElementById('filter-search').value;
+      const criticalOnly = document.getElementById('filter-critical-checkbox').checked;
+
+      let url = `/api/calls?critical_only=${criticalOnly}`;
+      if (topic) url += `&topic=${encodeURIComponent(topic)}`;
+      if (status) url += `&status=${encodeURIComponent(status)}`;
+      if (search) url += `&search=${encodeURIComponent(search)}`;
+
+      try {
+        const res = await fetch(url);
+        const calls = await res.json();
+        const tbody = document.getElementById('calls-table-body');
+        tbody.innerHTML = '';
+
+        calls.forEach(c => {
+          let scoreColor = 'text-emerald-700 bg-emerald-50 border-emerald-200';
+          if (c.quality_score < 60) scoreColor = 'text-red-700 bg-red-50 border-red-200';
+          else if (c.quality_score < 80) scoreColor = 'text-amber-700 bg-amber-50 border-amber-200';
+
+          const repeatBadge = c.is_repeat_call ? '<span class="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.2 rounded font-semibold ml-1">Повтор</span>' : '';
+          const critFlag = c.has_critical_error ? '<span class="text-[10px] bg-red-600 text-white px-1.5 py-0.2 rounded font-semibold ml-1">Ошибка!</span>' : '';
+
+          tbody.innerHTML += `
+            <tr class="hover:bg-slate-50/80 transition cursor-pointer" onclick="openCallCard('${c.call_id}')">
+              <td class="px-4 py-3 font-mono font-medium text-blue-600 flex items-center">
+                ${c.call_id} ${repeatBadge} ${critFlag}
+              </td>
+              <td class="px-4 py-3 text-xs text-slate-500">${new Date(c.timestamp).toLocaleString('ru-RU')}</td>
+              <td class="px-4 py-3 font-medium text-slate-800 text-xs">${c.topic}</td>
+              <td class="px-4 py-3 text-xs text-slate-600">${c.applicant_category}</td>
+              <td class="px-4 py-3 text-xs">${c.outcome}</td>
+              <td class="px-4 py-3 text-center">
+                <span class="inline-block px-2 py-0.5 rounded text-xs font-bold border ${scoreColor}">${c.quality_score}%</span>
+              </td>
+              <td class="px-4 py-3 text-xs text-slate-600">${c.manager_status}</td>
+              <td class="px-4 py-3 text-right">
+                <button onclick="event.stopPropagation(); openCallCard('${c.call_id}')" class="text-blue-600 hover:text-blue-800 text-xs font-semibold">
+                  Карточка &rarr;
+                </button>
+              </td>
+            </tr>
+          `;
+        });
+      } catch (err) {
+        console.error('Ошибка загрузки таблицы звонков:', err);
+      }
+    }
+
+    async function openCallCard(callId) {
+      switchTab('card');
+      try {
+        const res = await fetch(`/api/calls/${callId}`);
+        const call = await res.json();
+        currentCallData = call;
+
+        document.getElementById('card-placeholder').classList.add('hidden');
+        document.getElementById('card-content').classList.remove('hidden');
+
+        document.getElementById('card-call-id').innerText = call.metadata.call_id;
+        document.getElementById('card-timestamp').innerText = new Date(call.metadata.timestamp).toLocaleString('ru-RU');
+        document.getElementById('card-duration').innerText = call.metadata.duration_seconds;
+        document.getElementById('card-operator').innerText = call.metadata.operator_pseudonym;
+        document.getElementById('card-applicant').innerText = call.metadata.applicant_pseudonym;
+        document.getElementById('card-load').innerText = call.metadata.load_regime;
+
+        const scoreBadge = document.getElementById('card-score-badge');
+        scoreBadge.innerText = `${call.overall_quality_score}%`;
+        if (call.overall_quality_score >= 80) scoreBadge.className = 'px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800';
+        else if (call.overall_quality_score >= 60) scoreBadge.className = 'px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800';
+        else scoreBadge.className = 'px-2.5 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-800';
+
+        document.getElementById('card-critical-badge').classList.toggle('hidden', !call.has_critical_error);
+        document.getElementById('card-repeat-badge').classList.toggle('hidden', !call.metadata.is_repeat_call);
+
+        // Транскрипт
+        const uttsList = document.getElementById('card-utterances-list');
+        uttsList.innerHTML = '';
+        call.utterances.forEach(u => {
+          const isOp = u.speaker === 'Оператор';
+          const bgBubble = isOp ? 'bg-sky-50 border-sky-100' : 'bg-slate-100 border-slate-200';
+          const align = isOp ? 'mr-8' : 'ml-8';
+          const badgeColor = isOp ? 'text-sky-700 font-semibold' : 'text-slate-700 font-semibold';
+          const keyEvidence = u.is_key_evidence ? 'border-2 border-red-400 bg-red-50/50' : '';
+
+          const startSec = Math.floor(u.start_ms / 1000);
+          const timeStr = `${String(Math.floor(startSec / 60)).padStart(2, '0')}:${String(startSec % 60).padStart(2, '0')}`;
+
+          uttsList.innerHTML += `
+            <div id="utt-${u.id}" class="p-3 rounded-xl border text-xs ${bgBubble} ${align} ${keyEvidence} transition">
+              <div class="flex justify-between items-center mb-1">
+                <span class="${badgeColor}">${u.speaker}</span>
+                <button onclick="seekToTime(${u.start_ms})" class="font-mono text-[11px] text-slate-400 hover:text-blue-600 underline">
+                  ${timeStr}
+                </button>
+              </div>
+              <p class="text-slate-800 text-xs leading-relaxed">${u.text}</p>
+            </div>
+          `;
+        });
+
+        // 6 критериев
+        const critList = document.getElementById('card-criteria-list');
+        critList.innerHTML = '';
+        let foundEvidence = null;
+
+        call.criteria_evaluations.forEach(ev => {
+          let statusBadge = '<span class="text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded font-bold text-[11px]">Выполнен</span>';
+          if (ev.status === 'Нарушен') {
+            statusBadge = '<span class="text-red-700 bg-red-100 px-2 py-0.5 rounded font-bold text-[11px]">Нарушен</span>';
+          }
+
+          if (ev.evidences && ev.evidences.length > 0) {
+            foundEvidence = ev.evidences[0];
+          }
+
+          critList.innerHTML += `
+            <div class="p-3 rounded-lg border border-slate-100 bg-slate-50/60 flex items-start justify-between">
+              <div>
+                <div class="font-semibold text-xs text-slate-800">${ev.name}</div>
+                <div class="text-[11px] text-slate-500 mt-0.5">${ev.comment || ''}</div>
+              </div>
+              <div>${statusBadge}</div>
+            </div>
+          `;
+        });
+
+        // Блок доказательств
+        const evBox = document.getElementById('card-evidence-box');
+        if (foundEvidence) {
+          evBox.classList.remove('hidden');
+          document.getElementById('card-evidence-content').innerHTML = `
+            <div class="p-2 bg-white rounded border border-amber-300 font-mono text-[11px] text-red-700">
+              "${foundEvidence.quote}"
+            </div>
+            <p><strong>Пояснение:</strong> ${foundEvidence.explanation}</p>
+            <p class="text-slate-500"><strong>Нормативный эталон:</strong> ${foundEvidence.rule_id} (ред. ${foundEvidence.rule_version})</p>
+          `;
+        } else {
+          evBox.classList.add('hidden');
+        }
+
+        document.getElementById('card-manager-notes').value = call.manager_notes || '';
+        resetPlayer(call.metadata.duration_seconds);
+
+      } catch (err) {
+        console.error('Ошибка загрузки карточки:', err);
+      }
+    }
+
+    async function updateManagerStatus(status) {
+      if (!currentCallData) return;
+      const notes = document.getElementById('card-manager-notes').value;
+      try {
+        await fetch(`/api/calls/${currentCallData.metadata.call_id}/status`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ manager_status: status, manager_notes: notes })
+        });
+        alert(`Статус звонка обновлен: ${status}`);
+        loadOverview();
+        loadCallsTable();
+      } catch (err) {
+        alert('Ошибка при сохранении статуса');
+      }
+    }
+
+    async function saveNotesOnly() {
+      if (!currentCallData) return;
+      const notes = document.getElementById('card-manager-notes').value;
+      try {
+        await fetch(`/api/calls/${currentCallData.metadata.call_id}/status`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ manager_status: currentCallData.manager_status, manager_notes: notes })
+        });
+        alert('Заметка сохранена');
+      } catch (err) {
+        alert('Ошибка при сохранении');
+      }
+    }
+
+    async function loadActions() {
+      try {
+        const res = await fetch('/api/actions');
+        const actions = await res.json();
+        const container = document.getElementById('actions-cards-container');
+        container.innerHTML = '';
+
+        actions.forEach(a => {
+          container.innerHTML += `
+            <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200 flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-xs font-mono font-bold text-sky-600">${a.action_id}</span>
+                  <span class="text-xs px-2.5 py-0.5 rounded-full font-semibold bg-blue-100 text-blue-800">${a.status}</span>
+                </div>
+                <h3 class="font-bold text-slate-900 text-sm mb-1">${a.title}</h3>
+                <p class="text-xs text-slate-600 leading-relaxed">${a.description}</p>
+                <div class="mt-3 pt-3 border-t border-slate-100 text-xs space-y-1">
+                  <div class="text-slate-500"><strong>Ответственный:</strong> <span class="text-slate-800">${a.owner}</span></div>
+                  <div class="text-slate-500"><strong>Ожидаемый эффект:</strong> <span class="text-emerald-700 font-medium">${a.expected_impact_metric}</span></div>
+                </div>
+              </div>
+              <div class="mt-4 pt-3 flex justify-between items-center text-xs text-slate-400">
+                <span>Срок: ${a.target_date ? new Date(a.target_date).toLocaleDateString('ru-RU') : 'Не назначен'}</span>
+                <span class="text-slate-500">${a.related_call_ids.length} связанных звонков</span>
+              </div>
+            </div>
+          `;
+        });
+      } catch (err) {
+        console.error('Ошибка загрузки мер:', err);
+      }
+    }
+
+    function resetFilters() {
+      document.getElementById('filter-search').value = '';
+      document.getElementById('filter-topic').value = '';
+      document.getElementById('filter-status').value = '';
+      document.getElementById('filter-critical-checkbox').checked = false;
+      loadCallsTable();
+    }
+
+    function filterCriticalOnly() {
+      document.getElementById('filter-critical-checkbox').checked = true;
+      loadCallsTable();
+    }
+
+    // Симулятор воспроизведения аудио
+    function resetPlayer(durationSec) {
+      clearInterval(audioInterval);
+      isPlaying = false;
+      currentPlayTimeMs = 0;
+      document.getElementById('player-play-icon').className = 'fa-solid fa-play';
+      document.getElementById('player-scrubber').value = 0;
+      document.getElementById('player-scrubber').max = durationSec;
+      updateTimeDisplay(0, durationSec);
+    }
+
+    function togglePlayAudio() {
+      if (!currentCallData) return;
+      const totalSec = currentCallData.metadata.duration_seconds;
+      if (isPlaying) {
+        clearInterval(audioInterval);
+        isPlaying = false;
+        document.getElementById('player-play-icon').className = 'fa-solid fa-play';
+      } else {
+        isPlaying = true;
+        document.getElementById('player-play-icon').className = 'fa-solid fa-pause';
+        audioInterval = setInterval(() => {
+          currentPlayTimeMs += 500;
+          const currSec = Math.floor(currentPlayTimeMs / 1000);
+          document.getElementById('player-scrubber').value = currSec;
+          updateTimeDisplay(currSec, totalSec);
+          if (currSec >= totalSec) {
+            clearInterval(audioInterval);
+            isPlaying = false;
+            document.getElementById('player-play-icon').className = 'fa-solid fa-play';
+          }
+        }, 500);
+      }
+    }
+
+    function scrubAudio(sec) {
+      currentPlayTimeMs = sec * 1000;
+      if (currentCallData) {
+        updateTimeDisplay(sec, currentCallData.metadata.duration_seconds);
+      }
+    }
+
+    function seekToTime(ms) {
+      currentPlayTimeMs = ms;
+      const sec = Math.floor(ms / 1000);
+      document.getElementById('player-scrubber').value = sec;
+      if (currentCallData) {
+        updateTimeDisplay(sec, currentCallData.metadata.duration_seconds);
+      }
+    }
+
+    function updateTimeDisplay(currSec, totalSec) {
+      const cM = String(Math.floor(currSec / 60)).padStart(2, '0');
+      const cS = String(currSec % 60).padStart(2, '0');
+      const tM = String(Math.floor(totalSec / 60)).padStart(2, '0');
+      const tS = String(totalSec % 60).padStart(2, '0');
+      document.getElementById('player-time-display').innerText = `${cM}:${cS} / ${tM}:${tS}`;
+    }
+
+    // Тест-стенд
+    function loadLabPreset(num) {
+      if (num === 1) {
+        document.getElementById('lab-caller-text').value = "Здравствуйте! До какого времени завтра 5 августа нужно сдать согласие на бюджет бакалавриата?";
+        document.getElementById('lab-operator-text').value = "Добрый день! Вы можете привезти согласие до вечера 5 августа, часиков до шести или восьми вечера.";
+      } else if (num === 2) {
+        document.getElementById('lab-caller-text').value = "Здравствуйте! Я гражданин Узбекистана. Как мне подать документы на лечебное дело?";
+        document.getElementById('lab-operator-text').value = "Подавайте через портал Госуслуг, суперсервис Поступление в вуз онлайн.";
+      } else if (num === 3) {
+        document.getElementById('lab-caller-text').value = "Здравствуйте! Я иногородний абитуриент из Самары. Когда начнётся заселение в общежитие и какие медсправки нужны?";
+        document.getElementById('lab-operator-text').value = "Доброе утро! Заселение первого курса начинается с 25 августа. Заявление подается в личном кабинете после выхода приказа. Обязательно подготовьте справку 086/у, флюорографию и полис ОМС.";
+      }
+    }
+
+    async function runLiveAnalysis() {
+      const callerText = document.getElementById('lab-caller-text').value;
+      const operatorText = document.getElementById('lab-operator-text').value;
+      if (!callerText || !operatorText) {
+        alert('Заполните обе реплики диалога');
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/analyze-custom', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ caller_text: callerText, operator_text: operatorText })
+        });
+        const data = await res.json();
+
+        document.getElementById('lab-result-placeholder').classList.add('hidden');
+        document.getElementById('lab-result-content').classList.remove('hidden');
+
+        document.getElementById('lab-topic').innerText = data.topic;
+        const scoreElem = document.getElementById('lab-score');
+        scoreElem.innerText = `${data.overall_quality_score}%`;
+        if (data.overall_quality_score < 60) scoreElem.className = 'font-bold text-lg text-red-600';
+        else scoreElem.className = 'font-bold text-lg text-emerald-600';
+
+        const critBox = document.getElementById('lab-criteria-box');
+        critBox.innerHTML = '';
+        data.criteria_evaluations.forEach(ev => {
+          const isViolated = ev.status === 'Нарушен';
+          const bg = isViolated ? 'bg-red-50 text-red-800 border-red-200' : 'bg-emerald-50 text-emerald-800 border-emerald-200';
+          critBox.innerHTML += `
+            <div class="p-2.5 rounded-lg border text-xs flex justify-between items-center ${bg}">
+              <span><strong>${ev.name}:</strong> ${ev.comment || ''}</span>
+              <span class="font-bold">${ev.status}</span>
+            </div>
+          `;
+        });
+
+      } catch (err) {
+        alert('Ошибка при анализе диалога');
+      }
+    }
+  </script>
+</body>
+</html>
